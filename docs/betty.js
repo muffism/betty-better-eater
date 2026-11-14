@@ -27,6 +27,7 @@
   const DOUBTFUL_WORDS = R.DOUBTFUL_WORDS.map(([s, label]) => [rx(s), label]);
   const CHECK_WORDS = R.CHECK_WORDS.map(([s, label]) => [rx(s), label]);
   const ANIMAL_E = new Set(R.ANIMAL_E), HARAM_E = new Set(R.HARAM_E);
+  const ALLERGEN_WORDS = Object.fromEntries(Object.entries(R.ALLERGEN_WORDS).map(([k, s]) => [k, rx(s)]));
   const GF_LABELS = new Set(R.GLUTEN_FREE_LABELS), LF_LABELS = new Set(R.LACTOSE_FREE_LABELS);
 
   // ------------------------------------------------------------ diet.classify
@@ -77,7 +78,12 @@
     else if (!known) halal = "unknown";
     else halal = "ok-by-ingredients";
 
-    const freeOf = (key) => known && !R.ALLERGEN[key].some((t) => allergens.has(t) || traces.has(t));
+    const ingrAllergen = sub(R.NOT_ALLERGEN, " ", ingr);
+    const freeOf = (key) => {
+      if (!known || R.ALLERGEN[key].some((t) => allergens.has(t) || traces.has(t))) return false;
+      const words = key === "milk" ? sub(R.PLANT_MILKS, " ", ingrAllergen) : ingrAllergen;
+      return !has(ALLERGEN_WORDS[key], words);
+    };
     const gfCert = inter(labels, GF_LABELS);
     const glutenFree = gfCert || (freeOf("gluten") && !has(RX.GLUTEN_WORDS, ingr)
       && (!has(RX.OATS, ingr) || has(RX.GF_WORD, ingr)));

@@ -28,7 +28,7 @@ def main():
         sys.exit("Give at least one of --country, --store, --brand (the full dump has ~5 million products).")
     csv.field_size_limit(10**9)
     r = requests.get(URL, stream=True, timeout=120,
-                     headers={"User-Agent": "BettyBetterEater/0.1 (+https://github.com/muffism/betty-better-eater)"})
+                     headers={"User-Agent": "BettyBetterEater/0.3 (+https://github.com/muffism/betty-better-eater)"})
     r.raise_for_status()
     rows = csv.DictReader(io.TextIOWrapper(gzip.GzipFile(fileobj=r.raw), encoding="utf-8", errors="replace",
                                            newline=""), delimiter="\t", quoting=csv.QUOTE_NONE)

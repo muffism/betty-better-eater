@@ -6,6 +6,7 @@
   betty browse oats --store costco       browse a category at a retailer
   betty categories                       list category shortcuts
   betty explain                          how the score works
+  betty download --country canada        fast offline mode: download the data once (about 1.5 GB)
 
 Common options:
   --store costco       retailer (as tagged on Open Food Facts; e.g. costco, walmart, loblaws)
@@ -19,10 +20,11 @@ Common options:
   --organic            organic products only
   --report list.html   save a printable shopping list with photos
   --json               machine-readable output
+  --online             ignore the offline data for this search
 """
 import argparse, json, re, sys
 
-from . import off
+from . import off, local
 from .categories import SHORTCUTS, resolve
 from .score import BANDS, band_floor
 from .diet import passes, DIETS
@@ -121,7 +123,7 @@ def cmd_score(a):
     if not a.product.isdigit():
         a.terms = a.product
         return cmd_find(a)
-    p = off.product(a.product)
+    p = off.product(a.product, prefer_online=True)    # one quick read gives the freshest score
     if not p:
         sys.exit(f"Barcode {a.product} isn't on Open Food Facts yet. You can add it at "
                  f"https://world.openfoodfacts.org (it helps everyone).")
@@ -246,6 +248,79 @@ Set your own bar with --min (e.g. --min 85) or --band (e.g. --band very-good).
 """ + DISCLAIMER)
 
 
+def cmd_download(a):
+    if a.remove:
+        local.remove()
+        print("Offline data removed. Betty will search Open Food Facts online.")
+        return
+    cur = local.active()
+    if a.status:
+        if cur:
+            print(f"Offline data: {cur['products']:,} products sold in {cur['country']}, "
+                  f"{local.age_days()} day(s) old ({cur['path']}).")
+        else:
+            print("No offline data: Betty searches Open Food Facts online. Run `betty download` for fast mode.")
+        return
+    country = local.slug(a.country) if a.country else ((cur and cur["country"]) or _ask_country())
+    _run_download(country)
+
+
+def _ask_country(default="canada"):
+    try:
+        c = input(f"Which country do you shop in? (e.g. canada, united-states, united-kingdom) [{default}]: ")
+    except EOFError:
+        c = ""
+    return local.slug(c) or default
+
+
+def _run_download(country):
+    print(f"\nDownloading Open Food Facts once ({local.gb(local.dump_size())}). Only the products sold in "
+          f"{country} are kept.\nThis takes about 10-30 minutes depending on your connection. "
+          "Ctrl+C stops it safely.")
+    try:
+        n = local.download(country)
+    except KeyboardInterrupt:
+        print("\nStopped. Nothing was saved; Betty stays online. Run `betty download` any time.")
+        return False
+    except Exception as e:  # network trouble, disk full...
+        print(f"\nThe download didn't finish ({e}). Betty stays online. Try `betty download` again later.")
+        return False
+    if not n:
+        print(f"No products found for '{country}'. Check the spelling (e.g. united-kingdom), "
+              "then run `betty download --country <name>`.")
+        local.remove()
+        return False
+    print("Fast offline mode is on: searches are now instant. Data: Open Food Facts contributors (ODbL).\n"
+          "Refresh it monthly with `betty download`; go back online with `betty download --remove`.")
+    return True
+
+
+def first_run(a):
+    """Ask once: download the data (fast searches) or stay online (nothing to download, slow searches)."""
+    if "mode" in local.settings() or a.json or not sys.stdin.isatty():
+        return
+    print("""
+Betty can work two ways:
+  1. Online: nothing to download, but every search takes 10-40 seconds
+     (Open Food Facts asks apps to go slowly).
+  2. Fast offline: download the Open Food Facts data once, then searches are instant
+     and work without internet. Only your country's products are kept (a ~100-300 MB file).""")
+    try:
+        yes = input(f"\nDo you want to download the data? It will be around {local.gb(local.dump_size())}. "
+                    "(y/n) [n]: ")
+    except EOFError:
+        yes = ""
+    if not yes.strip().lower().startswith("y"):
+        local.save_settings(mode="online")
+        print("OK, staying online. You can switch any time with `betty download`.")
+        return
+    country = local.slug(a.country) if a.country else _ask_country()
+    if not _run_download(country):
+        local.save_settings(mode="online")
+    elif not a.country:
+        a.country = country
+
+
 def _where(a):
     bits = [x for x in [a.store and f"at {a.store}", a.country and f"in {a.country}"] if x]
     return (" " + " ".join(bits)) if bits else ""
@@ -263,6 +338,7 @@ def main(argv=None):
     common.add_argument("--pages", type=int, default=1, help="pages of 100 products to scan (default 1)")
     common.add_argument("--report", help="save a printable HTML shopping list, e.g. list.html")
     common.add_argument("--json", action="store_true", help="JSON output")
+    common.add_argument("--online", action="store_true", help="ignore the offline data for this search")
 
     ap = argparse.ArgumentParser(prog="betty", description="Betty Better Eater: find healthier groceries.",
                                  epilog="Example: betty browse oats --country canada --store costco --band excellent")
@@ -279,17 +355,32 @@ def main(argv=None):
     sub.add_parser("categories", help="list category shortcuts").set_defaults(fn=cmd_categories)
     sub.add_parser("diets", help="list diet & allergy filters").set_defaults(fn=cmd_diets)
     sub.add_parser("explain", help="how the score works").set_defaults(fn=cmd_explain)
+    s = sub.add_parser("download", help="fast offline mode: download the data once")
+    s.add_argument("--country", help="country to keep, e.g. canada")
+    s.add_argument("--remove", action="store_true", help="delete the offline data and go back online")
+    s.add_argument("--status", action="store_true", help="show what's downloaded")
+    s.set_defaults(fn=cmd_download)
     if argv is None:
         argv = sys.argv[1:]
     if not argv:                                   # no arguments: guided mode
         from .interactive import run
         argv = run()
     a = ap.parse_args(argv)
-    for k in ("store", "country", "diet", "min", "band", "organic", "limit", "pages", "report", "json"):
+    for k in ("store", "country", "diet", "min", "band", "organic", "limit", "pages", "report", "json", "online"):
         if not hasattr(a, k):
             setattr(a, k, None)
     a.limit = a.limit or 30
     a.pages = max(1, min(a.pages or 1, 10))
+    if a.cmd in ("score", "find", "better", "browse"):
+        if a.online:
+            local.DISABLED = True
+        else:
+            first_run(a)
+            cur = local.active()
+            if cur and not a.country:
+                a.country = cur["country"]           # the offline data covers the user's own country
+            if cur and not a.json and local.age_days() > local.STALE_DAYS:
+                print(f"(Your offline data is {local.age_days()} days old. Run `betty download` to refresh it.)")
     a.fn(a)
 
 

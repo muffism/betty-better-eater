@@ -16,7 +16,7 @@ import requests
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(os.path.expanduser("~"), ".cache", "betty")
 TAXONOMY_URL = "https://static.openfoodfacts.org/data/taxonomies/additives.json"
-UA = {"User-Agent": "BettyBetterEater/0.2 (+https://github.com/muffism/betty-better-eater)"}
+UA = {"User-Agent": "BettyBetterEater/0.3 (+https://github.com/muffism/betty-better-eater)"}
 
 
 def _norm(code: str) -> str:

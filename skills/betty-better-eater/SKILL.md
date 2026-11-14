@@ -23,6 +23,7 @@ betty explain                                                     # sanity check
 | A better alternative | `betty better <barcode or name> --country X --store Y --diet ... --band very-good` |
 | Browse a category | `betty browse <category> --country X --store Y --band excellent` (`betty categories` lists shortcuts; any OFF tag like `en:canned-chickpeas` works) |
 | Search by name | `betty find "organic chickpeas" --country X --store Y` |
+| Fast offline mode | `betty download --country X` (one ~1.5 GB download; ask the user first) |
 | Printable list | add `--report list.html` (photos from Open Food Facts, credited) |
 
 **Thresholds:** the user's own `--min N` (e.g. 90) and/or `--band excellent|very-good|good|bad|very-bad`

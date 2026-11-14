@@ -70,6 +70,23 @@ ALLERGEN = {  # Betty name -> Open Food Facts allergen tag(s)
     "fish": ["en:fish"], "shellfish": ["en:crustaceans", "en:molluscs"], "mustard": ["en:mustard"],
     "celery": ["en:celery"], "sulphites": ["en:sulphur-dioxide-and-sulphites"], "lupin": ["en:lupin"],
 }
+# Ingredient words per allergen: a second check, because Open Food Facts' allergen tags are
+# often missing (volunteers fill them in). Any match fails that "free-from" filter.
+ALLERGEN_WORDS = {
+    "gluten": GLUTEN_WORDS, "milk": DAIRY_WORDS, "fish": FISH, "shellfish": SHELLFISH,
+    "eggs": r"\b(eggs?|oeufs?|œufs?|albumen|egg whites?|egg yolks?|mayonnaise)\b",
+    "nuts": (r"\b(nuts?|almonds?|hazelnuts?|walnuts?|cashews?|pecans?|pistachios?|macadamias?|praline|marzipan|"
+             r"amandes?|noisettes?|noix|pistaches?|pralin[ée]?)\b"),
+    "peanuts": r"\b(peanuts?|groundnuts?|arachides?|cacahu[eè]tes?)\b",
+    "soy": r"\b(soy|soya|soybeans?|soja|edamame|tofu|tempeh|miso)\b",
+    "sesame": r"\b(sesame|sésame|tahini|tahina)\b",
+    "mustard": r"\b(mustard|moutarde)\b",
+    "celery": r"\b(celery|céleri|celeriac)\b",
+    "sulphites": r"\b(sul(ph|f)ites?|sul(ph|f)ur dioxide|(meta|bi)sul(ph|f)ites?)\b",
+    "lupin": r"\blupin[e]?s?\b",
+}
+NOT_ALLERGEN = r"\bnoix de (coco|muscade)\b"      # French: coconut, nutmeg
+
 GLUTEN_FREE_LABELS = {"en:no-gluten", "en:certified-gluten-free", "en:gfco-gluten-free", "en:dzg-gluten-free",
                       "en:beyond-celiac-gluten-free", "en:canadian-celiac-association-gluten-free",
                       "en:free-from-dairy-and-gluten", "en:gluten-free"}
@@ -145,12 +162,17 @@ def classify(p: dict) -> dict:
     else:
         halal = "ok-by-ingredients"
 
+    ingr_allergen = re.sub(NOT_ALLERGEN, " ", ingr, flags=re.I)
+
     def free_of(key):
-        """True only if we have ingredient data and neither allergens nor 'may contain' mention it."""
+        """True only with an ingredient list, and no allergen tag, 'may contain' tag or ingredient word for it."""
         if not known:
             return False
         tags = set(ALLERGEN[key])
-        return not (tags & allergens) and not (tags & traces)
+        if tags & allergens or tags & traces:
+            return False
+        words = re.sub(PLANT_MILKS, " ", ingr_allergen, flags=re.I) if key == "milk" else ingr_allergen
+        return not _has(ALLERGEN_WORDS[key], words)
 
     gf_cert = bool(labels & GLUTEN_FREE_LABELS)
     gluten_free = gf_cert or (free_of("gluten") and not _has(GLUTEN_WORDS, ingr)

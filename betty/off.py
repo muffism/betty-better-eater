@@ -11,8 +11,9 @@ from .nutriscore import Nutrition, points as ns_points
 from .score import estimate
 from .additives import risks
 from .diet import classify, badges, warnings
+from . import local
 
-UA = {"User-Agent": "BettyBetterEater/0.2 (+https://github.com/muffism/betty-better-eater)"}
+UA = {"User-Agent": "BettyBetterEater/0.3 (+https://github.com/muffism/betty-better-eater)"}
 BASE = "https://world.openfoodfacts.org"
 FIELDS = ("code,product_name,product_name_en,brands,quantity,stores,stores_tags,countries_tags,labels_tags,"
           "categories_tags,categories_hierarchy,ingredients_text,ingredients_text_en,additives_tags,"
@@ -54,14 +55,23 @@ def _get(url, params, kind, ttl=7 * 86400):
     return {}
 
 
-def product(barcode: str) -> dict:
-    return _get(f"{BASE}/api/v2/product/{barcode}", {"fields": FIELDS}, "read").get("product") or {}
+def product(barcode: str, prefer_online=False) -> dict:
+    """One product by barcode. Uses the offline database when there is one (falls back to the internet)."""
+    if not prefer_online:
+        hit = local.product(barcode)
+        if hit:
+            return hit
+    p = _get(f"{BASE}/api/v2/product/{barcode}", {"fields": FIELDS}, "read").get("product") or {}
+    return p or (local.product(barcode) if prefer_online else {})
 
 
 def search(*, terms=None, category=None, country=None, store=None, brand=None, organic=False,
            page_size=100, page=1) -> list:
     """Filter-based search. country/store/brand/category are Open Food Facts tags,
-    e.g. country='canada', store='costco', category='en:breakfast-cereals'."""
+    e.g. country='canada', store='costco', category='en:breakfast-cereals'.
+    Answered from the offline database when it covers that country (instant)."""
+    if local.covers(country):
+        return local.search(terms=terms, category=category, store=store, brand=brand, organic=organic, page=page)
     p = {"fields": FIELDS, "page_size": page_size, "page": page, "sort_by": "unique_scans_n"}
     if category:
         p["categories_tags"] = category if ":" in category else "en:" + category

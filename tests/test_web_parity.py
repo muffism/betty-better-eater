@@ -72,6 +72,8 @@ FIXTURES = [
     P("33", "whey, casein, cocoa butter, chocolate", allergens_tags=["en:milk"]),
     P("34", "water, sugar, ethanol", additives_tags=["en:e1510"]),
     P("35", "sardines, olive oil, salt", N(208, 0, 2.5, 0.4, 0, 24, 15), categories_tags=["en:canned-fishes"]),
+    P("36", "rolled oats, almonds, sugars (honey blend), modified milk ingredients, sesame, soya, egg yolks"),
+    P("37", "noix de coco, coconut milk, nutmeg, eggplant, nutritional yeast, amandes, crème"),
 ]
 
 

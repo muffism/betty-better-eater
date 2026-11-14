@@ -28,6 +28,12 @@ It runs entirely in your browser and talks only to Open Food Facts.
 
 Betty then asks a few questions: what you want to do, your country and store, your diet, and how picky to be.
 
+**The first time, Betty asks one more:** *"Do you want to download the data? It will be around 1.5 GB."*
+- **Yes (fast):** Betty downloads Open Food Facts once (10–30 minutes), keeps only the products sold in your
+  country (a ~100–300 MB file), and from then on every search is **instant** and works without internet.
+- **No (online):** nothing to download, but each search takes 10–40 seconds, because Open Food Facts asks apps
+  to go slowly. You can switch any time with `betty download`.
+
 **Command line:**
 ```bash
 pip install "git+https://github.com/muffism/betty-better-eater"
@@ -40,6 +46,8 @@ betty find "granola" --country canada --diet gluten-free,nut-free,vegan
 betty categories                        # category shortcuts (oats, chicken, frozen-vegetables, ...)
 betty diets                             # every diet & allergy filter
 betty explain                           # how the score works
+betty download --country canada         # fast offline mode (refresh monthly with the same command)
+betty download --status                 # what's downloaded;  --remove  deletes it and goes back online
 ```
 
 ### Your own bar: a number, a band, or both
@@ -56,7 +64,7 @@ Use `--band very-good`, or your own cut-off with `--min 85`. If you give both, t
 ### Options that work everywhere
 `--country` · `--store` · `--diet` (see below) · `--organic` ·
 `--min` · `--band` · `--limit` · `--pages` (scan more products) · `--report list.html` (a printable list with photos;
-print it to PDF from your browser) · `--json`
+print it to PDF from your browser) · `--json` · `--online` (skip the offline data for one search)
 
 ---
 
@@ -119,19 +127,34 @@ Betty uses Open Food Facts' store tags, which volunteers add. Big chains (Costco
 are covered reasonably well and small shops less so. If a store search comes up short, search your country instead and
 check the store's own website for availability. You can also add the store to products on Open Food Facts to help the next person.
 
-## Offline / spreadsheet mode
-```bash
-python scripts/off_filter_dump.py --country canada --store costco --out costco_canada.tsv
-```
-This streams the full Open Food Facts dump (about 1.5 GB, never saved) and keeps just your slice.
+## Fast offline mode
+`betty download --country canada` streams the full Open Food Facts export once (about 1.5 GB, never saved to disk)
+and keeps only the products sold in your country, in `~/.cache/betty/products-<country>.db`. After that:
+- `find`, `browse` and `better` search that file instantly and scan up to 3,000 products per search, not 100.
+- Searches for another country (`--country france`) and `--online` still go to the live site.
+- The export leaves the store blank for most products, even though the live site has it. So the first time you
+  search a store (`--store costco`), Betty fetches that store's product list online once (about 40 seconds for
+  Costco Canada) and keeps it for 30 days. After that, store searches are instant too.
+- `betty score <barcode>` still checks online first (one quick lookup gives the freshest data) and uses the file if
+  you're offline.
+- The export doesn't include Open Food Facts' own Nutri-Score field, so Betty computes it from the nutrients, and
+  uses the measured fruit/vegetable share instead of the estimate. A few products can differ by a few points from
+  the online score; `betty score <barcode>` shows the online one.
+- It is a snapshot: refresh it monthly with `betty download` (Betty reminds you after 30 days).
+
+The export is the way Open Food Facts recommends for heavy use, so it's also kinder to their servers.
+
+**Spreadsheet instead?** `python scripts/off_filter_dump.py --country canada --store costco --out costco_canada.tsv`
+saves your slice as a TSV you can open in Excel (filtered, not scored).
 
 ## Using it with Claude (optional)
 `skills/betty-better-eater/SKILL.md` is a ready-made Claude skill. Copy the folder into `~/.claude/skills/`
 (Claude Code), or upload it as a skill in Claude, then ask things like *"What are the best halal snacks at Walmart Canada, 85 and up?"*
 
 ## Privacy
-Betty doesn't collect anything. It only sends your search terms to Open Food Facts. The command line caches answers in
-`~/.cache/betty`; the web app keeps your choices in your own browser only.
+Betty doesn't collect anything. It only sends your search terms to Open Food Facts (in offline mode, not even
+that). The command line keeps its cache, settings and offline data in `~/.cache/betty`; the web app keeps your
+choices in your own browser only.
 
 ## Credits, with gratitude 🙏
 Betty is mostly other people's good work, glued together:

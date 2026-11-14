@@ -1,6 +1,7 @@
 """Guided mode: run `betty` with no arguments and answer a few questions."""
 from .categories import SHORTCUTS
 from .diet import DIETS
+from . import local
 
 
 def _ask(q, default=""):
@@ -44,7 +45,11 @@ def run():
         print("\nSome categories: " + ", ".join(sorted(SHORTCUTS)[:24]) + ", ...")
         argv.append(_ask("Category", "oats"))
 
-    country = _ask("\nWhich country do you shop in? (e.g. canada, united-states, united-kingdom; blank = anywhere)")
+    cur = local.active()
+    if cur:
+        country = _ask("\nWhich country do you shop in?", cur["country"])
+    else:
+        country = _ask("\nWhich country do you shop in? (e.g. canada, united-states, united-kingdom; blank = anywhere)")
     store = _ask("Which store? (e.g. costco, walmart, loblaws, tesco; blank = any store)")
     if country:
         argv += ["--country", country.lower().replace(" ", "-")]
@@ -76,5 +81,8 @@ def run():
             argv.append("--organic")
         if _ask("Save a printable shopping list with photos? (y/n)", "y").lower().startswith("y"):
             argv += ["--report", _ask("File name", "betty-list.html")]
-    print("\nSearching Open Food Facts (it's polite to go slowly, so this can take a few seconds)...")
+    if cur and local.covers(country):
+        print("\nSearching your offline Open Food Facts data...")
+    else:
+        print("\nSearching Open Food Facts (it's polite to go slowly, so this can take a few seconds)...")
     return argv

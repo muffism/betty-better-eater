@@ -529,6 +529,21 @@ null
 "en:sulphur-dioxide-and-sulphites"
 ]
 },
+"ALLERGEN_WORDS": {
+"celery": "\\b(celery|céleri|celeriac)\\b",
+"eggs": "\\b(eggs?|oeufs?|œufs?|albumen|egg whites?|egg yolks?|mayonnaise)\\b",
+"fish": "\\b(fish|poisson|salmon|saumon|tuna|thon|sardine|cod|morue|tilapia|trout|mackerel|anchov\\w*|herring|pollock|haddock)\\b",
+"gluten": "\\b(wheat|blé|barley|orge|rye|seigle|spelt|épeautre|malt|triticale|kamut|semolina|durum|farro|bulgur|couscous|seitan)\\b",
+"lupin": "\\blupin[e]?s?\\b",
+"milk": "\\b(milk|lait|cream|crème|butter|beurre|cheese|fromage|whey|lactosérum|casein|caséine|yogurt|yaourt|lactose|ghee)\\b",
+"mustard": "\\b(mustard|moutarde)\\b",
+"nuts": "\\b(nuts?|almonds?|hazelnuts?|walnuts?|cashews?|pecans?|pistachios?|macadamias?|praline|marzipan|amandes?|noisettes?|noix|pistaches?|pralin[ée]?)\\b",
+"peanuts": "\\b(peanuts?|groundnuts?|arachides?|cacahu[eè]tes?)\\b",
+"sesame": "\\b(sesame|sésame|tahini|tahina)\\b",
+"shellfish": "\\b(shrimp|prawn|crab|lobster|crayfish|clam|mussel|oyster|scallop|squid|octopus|crevette|homard)\\b",
+"soy": "\\b(soy|soya|soybeans?|soja|edamame|tofu|tempeh|miso)\\b",
+"sulphites": "\\b(sul(ph|f)ites?|sul(ph|f)ur dioxide|(meta|bi)sul(ph|f)ites?)\\b"
+},
 "ANIMAL_DERIVED": "\\b(gelatin[e]?|gélatine|collagen|collagène|rennet|présure|lard|tallow|suet|animal fat|animal shortening|bone (broth|phosphate|char)|carmine|cochineal|carminic acid|isinglass)\\b",
 "ANIMAL_E": [
 "e120",
@@ -635,6 +650,7 @@ null
 "en:no-lactose"
 ],
 "MEAT": "\\b(chicken|poulet|turkey|dinde|lamb|agneau|mutton|goat|duck|canard|venison|meat|viande|beef|pork|veal)\\b",
+"NOT_ALLERGEN": "\\bnoix de (coco|muscade)\\b",
 "OATS": "\\b(oats?|oat flour|avoine)\\b",
 "PLANT_MILKS": "\\b(coconut|almond|oat|soy|soya|rice|cashew|cocoa|peanut|shea|nut) (milk|butter|cream)\\b",
 "PORK": "\\b(pork|porc|bacon|ham|jambon|lard|saindoux|prosciutto|pancetta|chorizo|salami|pepperoni|pig|swine)\\b",
@@ -726,5 +742,5 @@ null
 "8": 40,
 "9": 35
 },
-"version": "0.2.0"
+"version": "0.3.0"
 };

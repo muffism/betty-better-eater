@@ -148,3 +148,17 @@ def test_alternatives_skip_brand_tags_typed_as_categories():
     cats = similar_categories({"categories_hierarchy": ["en:spreads", "en:sweet-spreads", "fr:Nutella",
                                                        "en:hazelnut-spreads"]})
     assert cats == ["en:hazelnut-spreads", "en:sweet-spreads"]
+
+
+def test_allergens_caught_from_ingredients_when_tags_are_missing():
+    # real case: Open Food Facts had no allergen tags in its export, but almonds were in the ingredients
+    f = classify(Q("whole grain rolled oats, vegetable oil, almonds, sugars (honey blend, sugar), salt"))
+    assert not passes(f, {"nut-free"}) and passes(f, {"peanut-free", "egg-free", "soy-free"})
+    assert not passes(classify(Q("sugar, peanuts, salt")), {"peanut-free"})
+    assert not passes(classify(Q("flour, sesame seeds, soy lecithin")), {"sesame-free"})
+    assert not passes(classify(Q("flour, sesame seeds, soy lecithin")), {"soy-free"})
+    assert not passes(classify(Q("pasta, egg yolks")), {"egg-free"})
+    assert not passes(classify(Q("vinegar, mustard seed")), {"mustard-free"})
+    # not allergens: coconut, nutmeg, eggplant, nutritional yeast, coconut milk for dairy
+    f = classify(Q("coconut, nutmeg, noix de coco, eggplant, nutritional yeast, coconut milk"))
+    assert passes(f, {"nut-free", "egg-free", "dairy-free"})
