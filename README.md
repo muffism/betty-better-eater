@@ -17,7 +17,11 @@ AI assistant.
 
 ## Quick start
 
-**Easiest (no typing):**
+**Easiest: open the web app** 👉 **https://muffism.github.io/betty-better-eater/**
+Works on phones and computers, nothing to install, no sign-up. On Android/Chrome you can scan barcodes with your camera.
+It runs entirely in your browser and talks only to Open Food Facts.
+
+**On your computer (no typing):**
 - **Windows:** download this repo (green **Code** button, then **Download ZIP**), unzip, and double-click **`Betty (Windows).bat`**.
 - **Mac:** double-click **`betty.command`** (first time: right-click, then **Open**).
 - You need Python 3.10+ ([python.org](https://www.python.org/downloads/)). Betty installs itself the first time.
@@ -90,13 +94,23 @@ Combine any of these with commas, e.g. `--diet halal,gluten-free,nut-free` (or p
 Each product lists **only the diets it fits**, e.g. `Fits: Halal (ingredients) · Kosher · Vegan · Gluten-free`.
 
 How careful is it?
+- **No ingredient list = additives unchecked**, so that product's score may be too high; Betty says so on the product.
 - **Free-from filters are cautious.** Products with no ingredient list are left out, and "may contain" warnings count
   as containing. Plain oats are not called gluten-free unless labelled. Crowd-sourced data can still be wrong, so
   **with a real allergy, always read the pack.**
 - `halal` passes products with a halal certification label, **or** non-meat products whose ingredients contain nothing
-  known to be haram or doubtful (pork, alcohol, gelatin, rennet, carmine, L-cysteine, some emulsifiers...). Meat and
-  poultry always need a certificate. "Halal (ingredients)" is **not** a certification or a religious ruling. Wine
-  vinegar is flagged as *doubtful* so you can decide.
+  known to be haram or doubtful. Meat and poultry always need a certificate. "Halal (ingredients)" is **not** a
+  certification or a religious ruling.
+
+  | Ingredient | Betty says |
+|---|---|
+  | Pork in any form (incl. pork gelatin, lard), alcohol, E1510 | **Not halal** |
+  | Gelatin (E441), collagen, rennet, enzymes of unstated source, carmine (E120), L-cysteine (E920), shellac (E904), bone phosphate (E542), mono- & diglycerides (E471/E472), glycerin (E422), tallow/animal fat, wine vinegar | **Doubtful**: left out by the `halal` filter and named on the product, e.g. `halal doubtful: gelatin` |
+  | The same with a stated halal-friendly source: fish or halal gelatin, microbial/vegetable rennet or enzymes, vegetable glycerin, mono- & diglycerides of vegetable origin | Fine |
+  | Flavourings, vanilla extract | A "check" note only (most scholars are lenient); doesn't fail the filter |
+  | Anything with a halal certification label (and no pork/alcohol listed) | **Halal certified**: the certifier's word wins |
+
+  Vegetarian, vegan and pescatarian also refuse gelatin, collagen, animal rennet, carmine and animal fat (fish gelatin is fine for pescatarians).
 - `kosher` needs a kosher certification label (OU, Star-K, COR, MK, Kosher Parve...). Kashrut can't be judged from an
   ingredient list, so there's no "by ingredients" version.
 
@@ -116,7 +130,8 @@ This streams the full Open Food Facts dump (about 1.5 GB, never saved) and keeps
 (Claude Code), or upload it as a skill in Claude, then ask things like *"What are the best halal snacks at Walmart Canada, 85 and up?"*
 
 ## Privacy
-Betty doesn't collect anything. It only sends your search terms to Open Food Facts, and caches the answers in `~/.cache/betty`.
+Betty doesn't collect anything. It only sends your search terms to Open Food Facts. The command line caches answers in
+`~/.cache/betty`; the web app keeps your choices in your own browser only.
 
 ## Credits, with gratitude 🙏
 Betty is mostly other people's good work, glued together:
@@ -135,7 +150,11 @@ Betty is mostly other people's good work, glued together:
 Corrections are very welcome, especially to `betty/data/additive_overrides.json` (please cite a source), category shortcuts,
 translations, and real Yuka scans that disagree with Betty (`tests/test_score.py`). Run `pytest` before sending a PR.
 
-**Ideas we'd love help with:** phone barcode scanning (small web app), French/Spanish/Arabic/Urdu interface, price per score,
+The Python package is the single source of truth. The web app (`docs/`) uses the same rules: after changing word lists,
+diets, shortcuts or additive levels, run `python scripts/build_web.py`. `tests/test_web_parity.py` checks that the web
+app and the command line give identical answers (it needs Node.js).
+
+**Ideas we'd love help with:** barcode scanning on iPhone (Safari has no built-in barcode reader), French/Spanish/Arabic/Urdu interface, price per score,
 an optional 2023 Nutri-Score toggle, Yuka's separate water scale, and more halal certifier recognition.
 
 ## Licence & responsibility

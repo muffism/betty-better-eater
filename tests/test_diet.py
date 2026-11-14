@@ -93,3 +93,58 @@ def test_kosher_needs_label_and_every_diet_is_listed():
     assert not passes(classify(Q("water, salt")), {"kosher"})
     assert passes(classify(Q("water, salt", labels=["en:kosher-parve"])), {"kosher"})
     assert {"halal", "kosher", "vegan", "gluten-free", "lactose-free", "nut-free", "egg-free"} <= set(DIETS)
+
+
+# ---------------- gelatin & other hidden animal / alcohol sources
+from betty.diet import warnings  # noqa: E402
+
+
+def test_gummies_with_gelatin_are_doubtful_and_not_vegetarian_or_pescatarian():
+    f = classify(Q("glucose syrup, sugar, gelatin, citric acid, carmine", analysis=["en:non-vegan"]))
+    assert f["halal"] == "doubtful" and f["doubtful_why"] == ["gelatin", "carmine"]
+    assert not passes(f, {"halal"}) and not passes(f, {"pescatarian"}) and not passes(f, {"vegetarian"})
+    assert "halal doubtful: gelatin, carmine" in warnings(f)
+
+
+def test_pork_gelatin_is_haram_and_fish_or_halal_gelatin_is_fine():
+    assert classify(Q("sugar, pork gelatin"))["halal"] == "not-halal"
+    assert "not halal (pork)" in warnings(classify(Q("sugar, pork gelatin")))
+    fish = classify(Q("sugar, fish gelatin, citric acid"))
+    assert fish["halal"] == "ok-by-ingredients" and passes(fish, {"pescatarian"}) and not passes(fish, {"vegetarian"})
+    assert classify(Q("sugar, halal gelatin"))["halal"] == "ok-by-ingredients"
+
+
+def test_certified_halal_label_wins_over_gelatin():
+    assert classify(Q("sugar, gelatin", labels=["en:halal"]))["halal"] == "certified"
+
+
+def test_cheese_enzymes_microbial_ok_animal_rennet_doubtful():
+    ok = classify(Q("pasteurized milk, bacterial culture, salt, microbial enzyme", analysis=["en:vegetarian"]))
+    assert ok["halal"] == "ok-by-ingredients" and passes(ok, {"vegetarian"})
+    bad = classify(Q("milk, salt, rennet", analysis=["en:vegetarian"]))
+    assert bad["halal"] == "doubtful" and not passes(bad, {"vegetarian"})
+    assert classify(Q("milk, salt, enzymes"))["doubtful_why"] == ["enzymes (source not stated)"]
+
+
+def test_e_numbers_are_named():
+    f = classify(dict(Q("sugar, emulsifier (e471)"), additives_tags=["en:e471", "en:e441"]))
+    assert set(f["doubtful_why"]) == {"mono- & diglycerides (E471)", "gelatin (E441)"}
+
+
+def test_vegetable_glycerin_ok_plain_glycerin_doubtful():
+    assert classify(dict(Q("dates, vegetable glycerin"), additives_tags=["en:e422"]))["halal"] == "ok-by-ingredients"
+    assert classify(Q("dates, glycerin"))["doubtful_why"] == ["glycerin"]
+
+
+def test_flavourings_and_vanilla_are_a_note_not_a_fail():
+    f = classify(Q("oats, sugar, natural flavour, vanilla extract", analysis=["en:vegan"]))
+    assert f["halal"] == "ok-by-ingredients" and passes(f, {"halal"})
+    assert "halal: check flavourings & vanilla extract (made with alcohol)" in warnings(f)
+    assert not any("check" in w for w in warnings(classify(Q("oats, salt"))))
+
+
+def test_alternatives_skip_brand_tags_typed_as_categories():
+    from betty.cli import similar_categories
+    cats = similar_categories({"categories_hierarchy": ["en:spreads", "en:sweet-spreads", "fr:Nutella",
+                                                       "en:hazelnut-spreads"]})
+    assert cats == ["en:hazelnut-spreads", "en:sweet-spreads"]

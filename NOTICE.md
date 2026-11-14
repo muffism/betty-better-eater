@@ -5,6 +5,8 @@
   under the Database Contents License; product photos under
   [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Reports made by Betty credit Open Food Facts.
   If you publish a database derived from it, keep it under ODbL.
+- `docs/betty-data.js` contains additive risk levels derived from the Open Food Facts additives taxonomy, so
+  that file is available under the ODbL as well (the rest of the repository is MIT).
 - **Yuka** is a trademark of its owners. Betty is not affiliated with, endorsed by, or connected to Yuka.
   Betty only re-implements the scoring method that Yuka describes publicly on help.yuka.io; it contains no
   Yuka code, data, or logos, and its outputs are independent estimates.

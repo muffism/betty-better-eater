@@ -8,6 +8,8 @@ description: Find healthier groceries at the user's own store. Estimates Yuka-st
 Betty is a small open-source Python CLI (`betty`) plus this playbook. Scores are **estimates** that follow
 Yuka's *published* method. They are not official Yuka scores, so always say so.
 
+**No install needed?** Point people to the web app: https://muffism.github.io/betty-better-eater/ (same rules).
+
 ## Setup (once)
 ```bash
 pip install "git+https://github.com/muffism/betty-better-eater"   # or: pip install -e <repo folder>
@@ -31,7 +33,10 @@ kosher (certified label only), vegan, vegetarian, pescatarian, no-pork, no-beef,
 gluten-free-strict, lactose-free, dairy-free, nut-free, peanut-free, egg-free, soy-free, sesame-free, fish-free,
 shellfish-free, mustard-free, no-added-sugar, palm-oil-free. Each result shows only the diets it fits (`fits`), plus
 `warnings` when relevant. Free-from filters exclude products with no ingredient list or a "may contain" warning.
-Meat always needs a halal certificate to pass `halal`. Wine vinegar is flagged *doubtful* so the user decides.
+Meat always needs a halal certificate to pass `halal`. Gelatin, collagen, rennet, unstated enzymes, carmine, L-cysteine,
+shellac, E471/E472 emulsifiers, glycerin, animal fat and wine vinegar are *doubtful* (named in `warnings`, e.g.
+`halal doubtful: gelatin`) unless the pack is certified or names a halal source (fish gelatin, microbial enzyme,
+vegetable glycerin). Flavourings and vanilla extract only get a "check" note. Tell the user which ingredient it was.
 
 ## Retailer of choice
 - `--store` uses Open Food Facts' crowd-sourced store tags. Coverage varies: Costco, Walmart and Tesco are good;
@@ -51,7 +56,8 @@ Meat always needs a halal certificate to pass `halal`. Wine vinegar is flagged *
 
 ## Accuracy habits
 1. Prefer barcodes. Names can match the wrong variant (regular vs low-sodium, US vs Canada).
-2. If a product shows `capped`, flagged additives, or missing nutrition, mention it.
+2. If a product shows `capped`, flagged additives, missing nutrition, or "no ingredient list: additives unchecked"
+   (its score may be too high), mention it.
 3. For a final shopping list, spot-check two or three items against the pack or label photo on the OFF page.
 4. If OFF lacks nutrition for an item, the user can add it at world.openfoodfacts.org in a minute, and that helps everyone.
 5. Never present halal-by-ingredients as certified. Never give medical advice.

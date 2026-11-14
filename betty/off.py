@@ -12,7 +12,7 @@ from .score import estimate
 from .additives import risks
 from .diet import classify, badges, warnings
 
-UA = {"User-Agent": "BettyBetterEater/0.1 (+https://github.com/muffism/betty-better-eater)"}
+UA = {"User-Agent": "BettyBetterEater/0.2 (+https://github.com/muffism/betty-better-eater)"}
 BASE = "https://world.openfoodfacts.org"
 FIELDS = ("code,product_name,product_name_en,brands,quantity,stores,stores_tags,countries_tags,labels_tags,"
           "categories_tags,categories_hierarchy,ingredients_text,ingredients_text_en,additives_tags,"
@@ -85,10 +85,13 @@ BEVERAGE_CATS = {"en:beverages", "en:plant-based-beverages"}
 NOT_BEVERAGE = {"en:milks", "en:dairy-drinks", "en:plant-milks"}  # 2017 rule: milk scored as food
 
 
+ORGANIC_LABELS = ("en:organic", "en:eu-organic", "en:usda-organic", "en:canada-organic",
+                  "fr:ab-agriculture-biologique")
+
+
 def is_organic(p):
     labels = p.get("labels_tags") or []
-    return any(t in labels for t in ("en:organic", "en:eu-organic", "en:usda-organic",
-                                     "en:canada-organic", "fr:ab-agriculture-biologique"))
+    return any(t in labels for t in ORGANIC_LABELS)
 
 
 def to_nutrition(p) -> Nutrition | None:

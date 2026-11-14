@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Betty Better Eater</title>
+<meta name="description" content="Find healthier groceries at your own store: health estimates, better alternatives, and diet & allergy filters, using free Open Food Facts data.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥦</text></svg>">
+<style>
+:root{--bg:#f6f8f6;--card:#fff;--ink:#1d2a24;--muted:#5b6b63;--line:#d9e4dd;--accent:#1a7f45;--accent-ink:#fff;
+--chip:#eef5f0;--chip-org:#dff1e5;--warn-bg:#fdecea;--warn-ink:#a12d2d;--guide-bg:#fff7ec;--guide-line:#e08a1e;--focus:#2f6fde}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121715;--card:#1b2320;--ink:#e6eee9;--muted:#9fb0a7;
+--line:#2d3a34;--accent:#3fbf73;--accent-ink:#08130d;--chip:#24302b;--chip-org:#1f3a2a;--warn-bg:#3a2222;--warn-ink:#ffb4ab;
+--guide-bg:#2e261a;--guide-line:#e0a04a;--focus:#7aa7ff}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:28px;margin:8px 0 2px} h2{font-size:18px;margin:0 0 8px}
+.tag{color:var(--muted);margin:0 0 12px}
+.guide{padding:10px 14px;border-left:4px solid var(--guide-line);background:var(--guide-bg);border-radius:6px;font-size:14px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.mode{all:unset;cursor:pointer;border:2px solid var(--line);border-radius:12px;padding:12px;background:var(--card)}
+.mode b{display:block} .mode span{color:var(--muted);font-size:13px}
+.mode[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent)}
+.mode:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+label{font-weight:600;display:block;margin:12px 0 4px}
+.hint{font-weight:400;color:var(--muted);font-size:13px}
+input[type=text],input[type=number],input[type=search],select{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);
+border-radius:10px;background:var(--bg);color:var(--ink)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px} @media (max-width:640px){.row{grid-template-columns:1fr}}
+.inline{display:flex;gap:8px} .inline input{flex:1}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700;font-size:18px;padding:12px 22px}
+button.small{padding:5px 10px;font-size:13px}
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pill{all:unset;cursor:pointer;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:14px;background:var(--bg)}
+.pill[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pill:focus-visible{outline:3px solid var(--focus)}
+fieldset{border:0;padding:0;margin:0} legend{font-weight:600;margin:12px 0 4px;padding:0}
+.group{margin:6px 0} .group small{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:8px 0 4px}
+details.more{margin-top:12px} details.more summary{cursor:pointer;color:var(--muted)}
+.go{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}
+#status{color:var(--muted);font-size:14px;min-height:1.4em}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;
+animation:s 1s linear infinite;vertical-align:-2px;margin-right:6px} @keyframes s{to{transform:rotate(360deg)}}
+.reshead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:10px}
+.card{display:flex;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--card);break-inside:avoid}
+.card.base{border-style:dashed}
+.card img,.noimg{width:80px;height:80px;object-fit:contain;flex:none;border-radius:8px;background:#fff}
+.noimg{display:flex;align-items:center;justify-content:center;color:#888;font-size:11px;background:var(--chip)}
+.body{flex:1;min-width:0;font-size:14px} .body b{display:block;line-height:1.25}
+.muted{color:var(--muted);font-size:13px}
+.chip{display:inline-block;background:var(--chip);border-radius:6px;padding:1px 7px;margin:3px 4px 0 0;font-size:12px}
+.chip.org{background:var(--chip-org);font-weight:700} .chip.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.score{flex:none;width:60px;height:60px;border-radius:12px;color:#fff;font-weight:800;font-size:22px;display:flex;
+flex-direction:column;align-items:center;justify-content:center;line-height:1} .score small{font-size:9px;font-weight:600;margin-top:3px}
+.card details{margin-top:6px;font-size:13px} .card summary{cursor:pointer;color:var(--muted)}
+.card ul{margin:4px 0 0 18px;padding:0} .actions{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+a{color:var(--accent)}
+.empty{padding:14px;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
+footer{color:var(--muted);font-size:13px;margin:24px 0 40px}
+#scanner{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:9;padding:16px}
+#scanner video{max-width:100%;max-height:70vh;border-radius:12px} #scanner p{color:#fff}
+.howto{font-size:14px} .howto table{border-collapse:collapse;margin:6px 0} .howto td,.howto th{border:1px solid var(--line);padding:4px 8px;text-align:left}
+@media print{.noprint,#form,.actions,details.more{display:none!important} body{background:#fff;color:#000} .panel{border:0;padding:0}
+.card{border-color:#ccc} main{max-width:none}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Betty Better Eater 🥦</h1>
+  <p class="tag">Find healthier groceries at the store you actually shop at. Free, open data, no sign-up.</p>
+  <div class="guide"><b>Guide only.</b> Betty is a helpful guide, not a guarantee. Always read the label yourself to confirm
+    ingredients, allergens and certifications. What you buy and eat is your own decision and at your own discretion.
+    Not medical, allergy or religious advice.</div>
+</header>
+
+<section class="panel" id="form" aria-label="Search">
+  <h2>1. What would you like to do?</h2>
+  <div class="modes" role="group" aria-label="What would you like to do?">
+    <button class="mode" data-mode="score" aria-pressed="true"><b>Check a product</b><span>Barcode or name</span></button>
+    <button class="mode" data-mode="better" aria-pressed="false"><b>Find a better alternative</b><span>Something healthier like it</span></button>
+    <button class="mode" data-mode="browse" aria-pressed="false"><b>Browse a category</b><span>Oats, chicken, yogurt...</span></button>
+    <button class="mode" data-mode="find" aria-pressed="false"><b>Search by name</b><span>"organic chickpeas"</span></button>
+  </div>
+
+  <div id="q-product">
+    <label for="product">Barcode or product name <span class="hint">(the digits under the barcode are most accurate)</span></label>
+    <div class="inline"><input id="product" type="search" inputmode="search" placeholder="e.g. 0096619533602 or kirkland organic quinoa" autocomplete="off">
+      <button id="scanbtn" type="button" hidden title="Scan a barcode with your camera">📷 Scan</button></div>
+  </div>
+  <div id="q-category" hidden>
+    <label for="category">Category <span class="hint">(pick one or type your own)</span></label>
+    <input id="category" type="search" list="catlist" placeholder="e.g. oats" autocomplete="off">
+    <datalist id="catlist"></datalist>
+    <div class="quick" id="catquick"></div>
+  </div>
+  <div id="q-find" hidden>
+    <label for="terms">What are you looking for?</label>
+    <input id="terms" type="search" placeholder="e.g. organic chickpeas" autocomplete="off">
+  </div>
+
+  <h2 style="margin-top:18px">2. Where do you shop?</h2>
+  <div class="row">
+    <div><label for="country">Country</label>
+      <select id="country"></select>
+      <input id="country-other" type="text" placeholder="Type a country, e.g. belgium" hidden style="margin-top:6px"></div>
+    <div><label for="store">Store <span class="hint">(optional)</span></label>
+      <input id="store" type="search" list="storelist" placeholder="e.g. costco, walmart, tesco" autocomplete="off">
+      <datalist id="storelist"></datalist></div>
+  </div>
+
+  <h2 style="margin-top:18px">3. Diet & allergies <span class="hint">(optional, pick any)</span></h2>
+  <div id="diets"></div>
+
+  <h2 style="margin-top:18px">4. How picky?</h2>
+  <div class="quick" role="group" aria-label="Minimum band" id="bands"></div>
+  <div class="row" style="align-items:end">
+    <div><label for="min">Or your own minimum score <span class="hint">(0-100; the stricter one wins)</span></label>
+      <input id="min" type="number" min="0" max="100" inputmode="numeric" placeholder="e.g. 90"></div>
+    <div><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input id="organic" type="checkbox" style="width:20px;height:20px"> Organic only</label></div>
+  </div>
+  <details class="more"><summary>More options</summary>
+    <label for="pages">How many products to look through</label>
+    <select id="pages"><option value="1">Quick: the 100 most-scanned</option><option value="2">Deeper: 200</option><option value="3">Deepest: 300 (slower)</option></select>
+  </details>
+
+  <div class="go"><button class="primary" id="go">Find</button><button id="stop" type="button" hidden>Stop</button>
+    <span id="status" role="status" aria-live="polite"></span></div>
+</section>
+
+<section class="panel" id="results" hidden aria-live="polite">
+  <div class="reshead"><h2 id="restitle">Results</h2>
+    <div class="noprint"><button class="small" id="print">🖨️ Print / save as PDF</button></div></div>
+  <div class="muted" id="resmeta"></div>
+  <div id="rescards"></div>
+</section>
+
+<section class="panel howto">
+  <details><summary><b>How the score works</b></summary>
+    <p>Betty follows the method Yuka describes publicly. It is an independent estimate, <b>not an official Yuka score</b>.</p>
+    <table><tr><th>Part</th><th>Weight</th><th>From</th></tr>
+      <tr><td>Nutrition</td><td>60%</td><td>Nutri-Score (original 2017 algorithm), converted with Yuka's published table</td></tr>
+      <tr><td>Additives</td><td>30%</td><td>Risk levels from Open Food Facts/EFSA plus a small curated list; one high-risk additive caps the product at 49</td></tr>
+      <tr><td>Organic</td><td>10%</td><td>Bonus for an official organic label</td></tr></table>
+    <ul><li>Only certified-organic products can go above 90; a perfect non-organic food is exactly 90.</li>
+      <li>Nutri-Score D or E means the score can't go above 49.</li>
+      <li>Bands: Excellent 90+, Very good 75+, Good 50+, Bad 25+, Very bad below 25.</li></ul>
+    <p><b>Halal:</b> "Halal certified" means a certifier label is on the pack. "Halal (ingredients)" only means nothing haram or
+      doubtful was found in the ingredient list; it is not a certification. Gelatin, rennet, carmine, L-cysteine, some
+      emulsifiers, glycerin, animal fat and wine vinegar are flagged <i>doubtful</i> unless the pack is certified or names
+      a halal source (e.g. fish gelatin, microbial enzyme). Flavourings and vanilla extract get a "check" note.
+      <b>Kosher</b> needs a certification label. <b>Allergy filters are cautious</b>: no ingredient list or a "may contain"
+      warning means the product is left out. With a real allergy, always read the pack.</p>
+  </details>
+</section>
+
+<footer>
+  <p><b>Credits, with gratitude:</b> every product, photo, ingredient list and nutrient value comes from the volunteers of
+    <a href="https://world.openfoodfacts.org">Open Food Facts</a> (data ODbL, photos CC BY-SA); please
+    <a href="https://world.openfoodfacts.org/contribute">add a product</a> or <a href="https://world.openfoodfacts.org/donate-to-open-food-facts">donate</a> if Betty helps you.
+    Scoring method described publicly by <a href="https://yuka.io">Yuka</a>, whose app we recommend; Nutri-Score by Santé publique France;
+    additive evaluations by EFSA. Betty is an independent open-source project, not affiliated with Yuka or any retailer.</p>
+  <p><b>Privacy:</b> Betty runs entirely in your browser. Searches go straight to Open Food Facts and nowhere else; your
+    choices are remembered on this device only.</p>
+  <p><a href="https://github.com/muffism/betty-better-eater">Source code &amp; command-line version on GitHub</a> · MIT licence · <span id="ver"></span></p>
+</footer>
+</main>
+
+<div id="scanner" role="dialog" aria-label="Barcode scanner"><video id="video" playsinline muted></video>
+  <p>Point the camera at the barcode.</p><button id="scanclose">Close</button></div>
+
+<script src="betty-data.js"></script>
+<script src="betty.js"></script>
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const safeUrl = (u) => (/^https:\/\//.test(u || "") ? u : "");
+const D = Betty.data;
+$("#ver").textContent = "v" + D.version;
+const COLORS = { "Excellent": "#1a7f45", "Very good": "#3fa34d", "Good": "#7aa62c", "Bad": "#d97d0d", "Very bad": "#d14343" };
+
+// ------------------------------------------------------------------ form setup
+const COUNTRIES = [["", "Anywhere"], ["canada", "Canada"], ["united-states", "United States"], ["united-kingdom", "United Kingdom"],
+  ["ireland", "Ireland"], ["australia", "Australia"], ["new-zealand", "New Zealand"], ["france", "France"], ["belgium", "Belgium"],
+  ["switzerland", "Switzerland"], ["germany", "Germany"], ["netherlands", "Netherlands"], ["spain", "Spain"], ["italy", "Italy"],
+  ["india", "India"], ["pakistan", "Pakistan"], ["united-arab-emirates", "United Arab Emirates"], ["saudi-arabia", "Saudi Arabia"],
+  ["malaysia", "Malaysia"], ["morocco", "Morocco"], ["south-africa", "South Africa"], ["mexico", "Mexico"], ["__other", "Other..."]];
+$("#country").innerHTML = COUNTRIES.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+$("#country").onchange = () => { $("#country-other").hidden = $("#country").value !== "__other"; save(); };
+const STORES = ["costco", "walmart", "loblaws", "real-canadian-superstore", "no-frills", "metro", "sobeys", "iga", "whole-foods",
+  "trader-joe-s", "target", "kroger", "safeway", "aldi", "lidl", "tesco", "sainsbury-s", "asda", "waitrose", "carrefour",
+  "auchan", "leclerc", "woolworths", "coles", "lulu"];
+$("#storelist").innerHTML = STORES.map((s) => `<option value="${s}">`).join("");
+const cats = Object.keys(D.shortcuts).sort();
+$("#catlist").innerHTML = cats.map((c) => `<option value="${c}">`).join("");
+const POPULAR = ["oats", "cereal", "granola", "yogurt", "chicken", "eggs", "beans", "lentils", "hummus", "bread", "pasta",
+  "frozen-vegetables", "frozen-fruit", "nuts", "nut-butter", "bars", "crackers", "plant-milk", "cheese", "snacks"];
+$("#catquick").innerHTML = POPULAR.map((c) => `<button class="pill" type="button" data-cat="${c}" aria-pressed="false">${c.replace(/-/g, " ")}</button>`).join("");
+$("#catquick").onclick = (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; $("#category").value = b.dataset.cat; markCat(); save(); };
+$("#category").oninput = () => { markCat(); save(); };
+function markCat() { for (const b of document.querySelectorAll("[data-cat]")) b.setAttribute("aria-pressed", String(b.dataset.cat === $("#category").value.trim())); }
+
+const GROUPS = [["Religious", ["halal", "halal-strict", "kosher"]],
+  ["Lifestyle", ["vegan", "vegetarian", "pescatarian", "no-pork", "no-beef", "no-alcohol"]],
+  ["Free-from", ["gluten-free", "gluten-free-strict", "lactose-free", "dairy-free", "nut-free", "peanut-free", "egg-free",
+    "soy-free", "sesame-free", "fish-free", "shellfish-free", "mustard-free"]],
+  ["Other", ["no-added-sugar", "palm-oil-free"]]];
+const SHORT = { "halal": "Halal", "halal-strict": "Halal (certified only)", "kosher": "Kosher (certified)", "gluten-free-strict": "Gluten-free (labelled only)",
+  "nut-free": "Nut-free (incl. peanuts)" };
+const grouped = new Set(GROUPS.flatMap(([, ks]) => ks));
+const extra = Object.keys(Betty.DIETS).filter((k) => !grouped.has(k));
+if (extra.length) GROUPS.push(["More", extra]);
+$("#diets").innerHTML = GROUPS.map(([g, ks]) => `<div class="group"><small>${g}</small><div class="quick">` +
+  ks.filter((k) => Betty.DIETS[k]).map((k) => `<button class="pill" type="button" data-diet="${k}" aria-pressed="false" title="${esc(Betty.DIETS[k].label)}">${esc(SHORT[k] || k.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase()))}</button>`).join("") +
+  `</div></div>`).join("");
+$("#diets").onclick = (e) => { const b = e.target.closest("[data-diet]"); if (!b) return; b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); save(); };
+
+const BANDS = [["", "Show everything"], ["excellent", "Excellent (90+)"], ["very good", "Very good (75+)"], ["good", "Good (50+)"]];
+$("#bands").innerHTML = BANDS.map(([v, l]) => `<button class="pill" type="button" data-band="${v}" aria-pressed="false">${l}</button>`).join("");
+$("#bands").onclick = (e) => { const b = e.target.closest("[data-band]"); if (!b) return; setBand(b.dataset.band); save(); };
+function setBand(v) { for (const b of document.querySelectorAll("[data-band]")) b.setAttribute("aria-pressed", String(b.dataset.band === v)); }
+
+let mode = "score";
+function setMode(m) {
+  mode = m;
+  for (const b of document.querySelectorAll(".mode")) b.setAttribute("aria-pressed", String(b.dataset.mode === m));
+  $("#q-product").hidden = !(m === "score" || m === "better");
+  $("#q-category").hidden = m !== "browse";
+  $("#q-find").hidden = m !== "find";
+  $("#go").textContent = { score: "Check it", better: "Find something better", browse: "Show the best", find: "Search" }[m];
+}
+document.querySelector(".modes").onclick = (e) => { const b = e.target.closest(".mode"); if (!b) return; setMode(b.dataset.mode); save(); };
+for (const id of ["product", "terms", "store", "min", "country-other", "pages"]) $("#" + id).addEventListener("change", () => save());
+$("#organic").onchange = () => save();
+for (const id of ["product", "terms", "category", "store", "min", "country-other"])
+  $("#" + id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); run(); } });
+
+// remember choices on this device (optional convenience)
+const KEY = "betty-settings-v1";
+function state() {
+  return { mode, product: $("#product").value, terms: $("#terms").value, category: $("#category").value,
+    country: $("#country").value, countryOther: $("#country-other").value, store: $("#store").value,
+    diets: [...document.querySelectorAll('[data-diet][aria-pressed="true"]')].map((b) => b.dataset.diet),
+    band: (document.querySelector('[data-band][aria-pressed="true"]') || {}).dataset?.band ?? "", min: $("#min").value,
+    organic: $("#organic").checked, pages: $("#pages").value };
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state())); } catch (e) { /* private mode */ } }
+function load() {
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { s = {}; }
+  setMode(s.mode || "score");
+  $("#product").value = s.product || ""; $("#terms").value = s.terms || ""; $("#category").value = s.category || "";
+  $("#country").value = COUNTRIES.some(([v]) => v === s.country) ? s.country : "";
+  $("#country-other").value = s.countryOther || ""; $("#country-other").hidden = $("#country").value !== "__other";
+  $("#store").value = s.store || ""; $("#min").value = s.min || ""; $("#organic").checked = !!s.organic;
+  $("#pages").value = ["1", "2", "3"].includes(s.pages) ? s.pages : "1";
+  for (const d of s.diets || []) { const b = document.querySelector(`[data-diet="${CSS.escape(d)}"]`); if (b) b.setAttribute("aria-pressed", "true"); }
+  setBand(s.band ?? "very good"); markCat();
+}
+load();
+
+// ------------------------------------------------------------------ Open Food Facts (polite)
+const BASE = "https://world.openfoodfacts.org";
+const GAP = { search: 6500, read: 700 }, last = { search: 0, read: 0 }, cache = new Map();
+let stopped = false;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const status = (html) => { $("#status").innerHTML = html; };
+async function wait(ms, why) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if (stopped) throw new Error("stopped");
+    status(`<span class="spin"></span>${why} (${Math.ceil((end - Date.now()) / 1000)}s)`);
+    await sleep(Math.min(500, end - Date.now()));
+  }
+}
+async function get(path, params, kind, note) {
+  const url = BASE + path + "?" + new URLSearchParams({ ...params, app_name: "BettyBetterEater", app_version: D.version + "-web" });
+  if (cache.has(url)) return cache.get(url);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const gap = GAP[kind] - (Date.now() - last[kind]);
+    if (gap > 0) await wait(gap, "Going slowly to be polite to Open Food Facts");
+    if (stopped) throw new Error("stopped");
+    status(`<span class="spin"></span>${note}`);
+    last[kind] = Date.now();
+    try {
+      const r = await fetch(url);
+      if (r.status === 429 || r.status >= 500) { await wait(10000 * (attempt + 1), "Open Food Facts is busy, trying again"); continue; }
+      const data = await r.json();
+      if (data.product || (data.products && data.products.length)) cache.set(url, data);
+      return data;
+    } catch (e) {
+      if (stopped) throw e;
+      await wait(5000 * (attempt + 1), "Connection hiccup, trying again");
+    }
+  }
+  throw new Error("busy");
+}
+const tagify = (s) => s.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+async function product(code) { return (await get(`/api/v2/product/${encodeURIComponent(code)}`, { fields: D.fields }, "read", "Looking up the product")).product || null; }
+async function search({ terms, category, country, store, organic, page = 1, pageSize = 100, note }) {
+  const p = { fields: D.fields, page_size: pageSize, page, sort_by: "unique_scans_n" };
+  if (category) p.categories_tags = category;
+  if (country) p.countries_tags_en = country;
+  if (store) p.stores_tags = store;
+  if (organic) p.labels_tags = "en:organic";
+  if (terms) {
+    Object.assign(p, { search_terms: terms, search_simple: 1, action: "process", json: 1 });
+    return (await get("/cgi/search.pl", p, "search", note)).products || [];
+  }
+  return (await get("/api/v2/search", p, "search", note)).products || [];
+}
+
+// ------------------------------------------------------------------ run
+function settings() {
+  const s = state();
+  const country = s.country === "__other" ? tagify(s.countryOther) : s.country;
+  let floor = s.band ? Betty.bandFloor(s.band) : 0;
+  const min = s.min === "" ? null : Number(s.min);
+  if (min != null && !(min >= 0 && min <= 100)) throw new Error("Your own minimum must be a number from 0 to 100.");
+  if (min != null) floor = Math.max(floor, min);
+  return { ...s, country, store: s.store ? tagify(s.store) : "", floor, diet: s.diets, pages: Number(s.pages) || 1 };
+}
+const nice = (t) => t.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+const where = (s) => (s.store ? ` at ${nice(s.store)}` : "") + (s.country ? ` in ${nice(s.country)}` : "");
+function filter(products, s) {
+  const out = [], seen = new Set();
+  for (const p of products) {
+    if (seen.has(p.code)) continue; seen.add(p.code);
+    const r = Betty.evaluate(p);
+    if (!r || r.score < s.floor || !Betty.passes(r.diet, s.diet) || (s.organic && !r.organic)) continue;
+    out.push(r);
+  }
+  return out.sort((a, b) => b.score - a.score || String(a.name || "").localeCompare(String(b.name || "")));
+}
+async function fetchPages(s, kw) {
+  let all = [];
+  for (let page = 1; page <= s.pages; page++) {
+    const batch = await search({ ...kw, country: s.country, store: s.store, organic: s.organic, page,
+      note: `Asking Open Food Facts${s.pages > 1 ? ` (page ${page} of ${s.pages})` : ""}` });
+    all = all.concat(batch);
+    if (batch.length < 100) break;
+  }
+  return all;
+}
+
+async function run() {
+  let s;
+  try { s = settings(); } catch (e) { status(esc(e.message)); return; }
+  save(); stopped = false;
+  $("#go").disabled = true; $("#stop").hidden = false;
+  try {
+    if (mode === "score") await doScore(s);
+    else if (mode === "better") await doBetter(s);
+    else if (mode === "browse") await doBrowse(s);
+    else await doFind(s, s.terms);
+  } catch (e) {
+    if (e.message === "stopped") status("Stopped.");
+    else if (e.message === "busy") status("Open Food Facts is very busy right now. Please try again in a minute.");
+    else { status("Something went wrong: " + esc(e.message)); console.error(e); }
+    return;
+  } finally { $("#go").disabled = false; $("#stop").hidden = true; }
+}
+$("#go").onclick = run;
+$("#stop").onclick = () => { stopped = true; };
+
+async function doScore(s) {
+  const q = s.product.trim();
+  if (!q) return status("Type a barcode or a product name first.");
+  if (!/^\d{6,14}$/.test(q.replace(/\s/g, ""))) return doFind(s, q);
+  const p = await product(q.replace(/\s/g, ""));
+  if (!p) return show("Not found", [], `That barcode isn't on Open Food Facts yet. You can <a href="https://world.openfoodfacts.org/contribute">add it</a> in a couple of minutes, and it helps everyone.`);
+  const r = Betty.evaluate(p);
+  if (!r) return show(esc(p.product_name || q), [], `Found it, but it has no nutrition facts on Open Food Facts yet (or it's water, which Yuka rates on a separate scale), so it can't be scored. <a href="${BASE}/product/${esc(p.code)}">Add the nutrition facts</a>.`);
+  show(esc(r.name || q), [r], "", { open: true });
+}
+async function doFind(s, terms) {
+  terms = (terms || "").trim();
+  if (!terms) return status("Type what you're looking for first.");
+  const all = [];
+  for (let page = 1; page <= s.pages; page++) {
+    const b = await search({ terms, country: s.country, store: s.store, organic: s.organic, page, note: "Searching Open Food Facts" });
+    all.push(...b); if (b.length < 100) break;
+  }
+  show(`Results for "${esc(terms)}"${esc(where(s))}`, filter(all, s), "", { scanned: all.length, s });
+}
+async function doBrowse(s) {
+  const raw = s.category.trim();
+  if (!raw) return status("Pick or type a category first.");
+  const cat = Betty.resolveCategory(raw);
+  const all = await fetchPages(s, { category: cat });
+  const title = cat.split(":").pop().replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const note = all.length ? "" : `Open Food Facts doesn't know the category "${esc(raw)}". Try one from the list, or use <b>Search by name</b>.`;
+  show(esc(title + where(s)), filter(all, s), note, { scanned: all.length, s });
+}
+async function doBetter(s) {
+  const q = s.product.trim();
+  if (!q) return status("Type the barcode or name of the product you want to replace.");
+  let p;
+  if (/^\d{6,14}$/.test(q.replace(/\s/g, ""))) p = await product(q.replace(/\s/g, ""));
+  else p = (await search({ terms: q, country: s.country, pageSize: 10, note: "Finding your product" }))[0];
+  if (!p) return show("Not found", [], "Couldn't find that product on Open Food Facts. Try the barcode instead.");
+  const base = Betty.evaluate(p);
+  const cats = Betty.similarCategories(p);
+  if (!cats.length) return show(esc(p.product_name || q), base ? [base] : [], "That product has no specific category on Open Food Facts, so alternatives can't be matched. Try <b>Browse a category</b> instead.");
+  let results = [], cat = cats[0], scanned = 0, tried = 0;
+  for (cat of cats.slice(0, 6)) {          // its own category, then at most one level broader
+    const all = await fetchPages(s, { category: cat });
+    if (!all.length) continue;             // nothing in this category here (yet); try the next one
+    tried++; scanned += all.length;
+    results = filter(all, s).filter((r) => r.code !== p.code && (!base || r.score > base.score));
+    if (results.length || tried >= 2) break;
+  }
+  show(`Better than ${esc(p.product_name || q)}: ${esc(cat.split(":").pop().replace(/-/g, " "))}${esc(where(s))}`, results, "",
+    { scanned, s, base });
+}
+
+// ------------------------------------------------------------------ results
+let lastResults = [];
+function card(r, extraClass = "", open = false) {
+  const img = safeUrl(r.image) ? `<img src="${esc(r.image)}" alt="" loading="lazy">` : `<div class="noimg">no photo</div>`;
+  const why = [
+    `Nutrition ${r.nutrition_rating}/100 (Nutri-Score points ${r.nutriscore_points > 0 ? "+" : ""}${r.nutriscore_points}; ${esc(r.nutrition_source)})`,
+    `Additives ${r.additive_rating}/100${r.flagged_additives.length ? ` (check: ${esc(r.flagged_additives.map((x) => x.toUpperCase()).join(", "))})` : " (none of concern)"}`,
+    `Organic: ${r.organic ? "yes" : "no (so the most it can score is 90)"}`,
+    r.capped ? `Capped at 49: ${esc(r.capped)}` : "",
+  ].filter(Boolean).map((x) => `<li>${x}</li>`).join("");
+  return `<div class="card ${extraClass}">${img}<div class="body"><b>${esc(r.name || "Unnamed product")}</b>
+    <span class="muted">${esc([r.brands, r.quantity].filter(Boolean).join(" · "))}</span><div>
+    ${r.organic ? '<span class="chip org">Organic</span>' : ""}${r.fits.map((b) => `<span class="chip">${esc(b)}</span>`).join("")}
+    ${r.warnings.map((w) => `<span class="chip warn">${esc(w)}</span>`).join("")}</div>
+    <details${open ? " open" : ""}><summary>Why this score</summary><ul>${why}</ul></details>
+    <div class="actions"><a href="${esc(r.url)}" target="_blank" rel="noopener">Open Food Facts page</a>
+    <button class="small" data-better="${esc(r.code)}">Find better</button><span class="muted">${esc(r.code)}</span></div></div>
+    <div class="score" style="background:${COLORS[r.label] || "#888"}" aria-label="Score ${r.score} out of 100, ${esc(r.label)}">${r.score}<small>${esc(r.label)}</small></div></div>`;
+}
+function show(title, results, note, opt = {}) {
+  lastResults = results;
+  $("#results").hidden = false;
+  $("#restitle").innerHTML = title;
+  const s = opt.s;
+  const bits = [];
+  if (opt.scanned != null) bits.push(`${results.length} match${results.length === 1 ? "" : "es"} out of ${opt.scanned} products checked`);
+  if (s && (s.floor || s.diet.length || s.organic)) bits.push([s.floor ? `score ${s.floor}+` : "", ...s.diet, s.organic ? "organic" : ""].filter(Boolean).join(", "));
+  bits.push(new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }));
+  $("#resmeta").innerHTML = esc(bits.join(" · "));
+  let html = "";
+  if (opt.base) html += `<p class="muted" style="margin:10px 0 0">Your product:</p><div class="grid">${card(opt.base, "base")}</div>`;
+  if (note) html += `<div class="empty" style="margin-top:10px">${note}</div>`;
+  else if (!results.length) {
+    html += `<div class="empty" style="margin-top:10px"><b>Nothing matched.</b> Things to try: a lower bar, fewer diet filters,
+      leaving the store blank (store tags are added by volunteers, so smaller shops are thin), or "More options" to look
+      through more products.${s && s.store ? ` If you leave the store blank, check that the store sells your picks.` : ""}</div>`;
+  } else {
+    const LIMIT = 60;
+    html += `<div class="grid">${results.slice(0, LIMIT).map((r) => card(r, "", opt.open)).join("")}</div>`;
+    if (results.length > LIMIT) html += `<p><button id="showall">Show all ${results.length}</button></p>`;
+  }
+  html += `<div class="guide" style="margin-top:12px"><b>Guide only.</b> Read the label yourself to confirm ingredients, allergens and
+    certifications. Scores are independent estimates (not official Yuka scores); data from Open Food Facts contributors can be wrong or out of date.</div>`;
+  $("#rescards").innerHTML = html;
+  const all = $("#showall");
+  if (all) all.onclick = () => { all.parentElement.previousElementSibling.innerHTML = results.map((r) => card(r)).join(""); all.remove(); };
+  status(results.length ? "Done." : "");
+  $("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("#rescards").onclick = (e) => {
+  const b = e.target.closest("[data-better]"); if (!b) return;
+  $("#product").value = b.dataset.better; setMode("better"); save();
+  window.scrollTo({ top: 0, behavior: "smooth" }); run();
+};
+$("#print").onclick = () => { for (const d of document.querySelectorAll(".card details")) d.open = true; window.print(); };
+
+// ------------------------------------------------------------------ camera barcode scanning (where the browser supports it)
+if ("BarcodeDetector" in window && navigator.mediaDevices?.getUserMedia) {
+  BarcodeDetector.getSupportedFormats?.().then((f) => { if (f.some((x) => /ean|upc/.test(x))) $("#scanbtn").hidden = false; }).catch(() => {});
+}
+let stream = null;
+$("#scanbtn").onclick = async () => {
+  try {
+    const det = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    const v = $("#video"); v.srcObject = stream; await v.play();
+    $("#scanner").style.display = "flex";
+    while (stream) {
+      const codes = await det.detect(v).catch(() => []);
+      if (codes.length) { $("#product").value = codes[0].rawValue; closeScan(); save(); run(); break; }
+      await sleep(250);
+    }
+  } catch (e) { closeScan(); status("Couldn't open the camera. You can type the barcode digits instead."); }
+};
+function closeScan() { if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; $("#scanner").style.display = "none"; }
+$("#scanclose").onclick = closeScan;
+</script>
+</body>
+</html>

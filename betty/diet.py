@@ -15,7 +15,36 @@ import re
 PORK = r"\b(pork|porc|bacon|ham|jambon|lard|saindoux|prosciutto|pancetta|chorizo|salami|pepperoni|pig|swine)\b"
 BEEF = r"\b(beef|boeuf|bœuf|veal|veau|brisket|bison)\b"
 ALCOHOL = r"\b(wine|vin|beer|bière|rum|rhum|brandy|cognac|whisk(e)?y|vodka|liqueur|alcohol|alcool|ethanol|ethyl alcohol|mirin|sake)\b"
-DOUBTFUL = r"\b(gelatin[e]?|gélatine|rennet|présure|carmine|cochineal|l-cysteine|shellac|mono- and diglycerides)\b"
+# Halal "doubtful" (mashbooh): could be animal or alcohol derived. Fails the halal filter
+# unless the pack is halal-certified. Each entry: (regex, name shown to the user).
+DOUBTFUL_WORDS = [
+    (r"\b(gelatin[e]?|gélatine)\b", "gelatin"),
+    (r"\b(collagen|collagène)\b", "collagen"),
+    (r"\b(rennet|présure)\b", "rennet"),
+    (r"\benzymes?\b", "enzymes (source not stated)"),
+    (r"\b(carmine|cochineal|carminic acid)\b", "carmine"),
+    (r"\bl-cysteine\b", "L-cysteine"),
+    (r"\bshellac\b", "shellac"),
+    (r"\bmono-? ?(and|&) ?di-?glycerides\b|\bmonoglycerides\b", "mono- & diglycerides"),
+    (r"\b(glycerin[e]?|glycerol)\b", "glycerin"),
+    (r"\b(tallow|suet|animal fat|animal shortening)\b", "animal fat"),
+    (r"\bwine vinegar\b", "wine vinegar"),
+]
+# Things that make the above fine, removed from the text before checking.
+DOUBTFUL_OK = (r"\b(fish|halal|vegetable|plant|plant-based|vegetarian|marine) (gelatin[e]?|collagen|glycerin[e]?|glycerol)\b"
+               r"|\b(microbial|bacterial|vegetable|plant|fungal|non-animal|vegetarian) (rennet|enzymes?|coagulant)\b"
+               r"|\blactase( enzyme)?\b|\b(mono-? ?(and|&) ?di-?glycerides|glycerides) \(?(of )?(vegetable|plant)[^,;)]*\)?")
+# Softer: usually fine, but some people ask the maker. Shown as a note; does not fail the filter.
+CHECK_WORDS = [
+    (r"\b(natural )?(flavou?r(ing)?s?|arômes? naturels?)\b", "flavourings"),
+    (r"\bvanilla extract\b", "vanilla extract (made with alcohol)"),
+]
+# Animal-derived (not meat itself) -> not vegetarian / vegan / pescatarian.
+ANIMAL_DERIVED = (r"\b(gelatin[e]?|gélatine|collagen|collagène|rennet|présure|lard|tallow|suet|animal fat|animal shortening|"
+                  r"bone (broth|phosphate|char)|"
+                  r"carmine|cochineal|carminic acid|isinglass)\b")
+VEG_RENNET_OK = r"\b(microbial|vegetable|plant|fungal|non-animal|vegetarian) (rennet|présure)\b"
+FISH_DERIVED_OK = r"\b(fish|marine) (gelatin[e]?|collagen)\b|\bisinglass\b"
 MEAT = r"\b(chicken|poulet|turkey|dinde|lamb|agneau|mutton|goat|duck|canard|venison|meat|viande|beef|pork|veal)\b"
 FISH = r"\b(fish|poisson|salmon|saumon|tuna|thon|sardine|cod|morue|tilapia|trout|mackerel|anchov\w*|herring|pollock|haddock)\b"
 SHELLFISH = r"\b(shrimp|prawn|crab|lobster|crayfish|clam|mussel|oyster|scallop|squid|octopus|crevette|homard)\b"
@@ -25,8 +54,14 @@ SUGARS = r"\b(sugar|sucre|syrup|sirop|dextrose|glucose|fructose|sucrose|maltose|
 DAIRY_WORDS = r"\b(milk|lait|cream|crème|butter|beurre|cheese|fromage|whey|lactosérum|casein|caséine|yogurt|yaourt|lactose|ghee)\b"
 PLANT_MILKS = r"\b(coconut|almond|oat|soy|soya|rice|cashew|cocoa|peanut|shea|nut) (milk|butter|cream)\b"
 
-DOUBTFUL_E = {"e120", "e441", "e542", "e904", "e920", "e921", "e471", "e472a", "e472b", "e472c",
-              "e472e", "e481", "e482", "e491"}
+DOUBTFUL_E = {"e120": "carmine (E120)", "e441": "gelatin (E441)", "e542": "bone phosphate (E542)",
+              "e904": "shellac (E904)", "e920": "L-cysteine (E920)", "e921": "L-cystine (E921)",
+              "e422": "glycerin (E422)", "e471": "mono- & diglycerides (E471)", "e472a": "E472a", "e472b": "E472b",
+              "e472c": "E472c", "e472e": "E472e", "e481": "E481", "e482": "E482", "e491": "E491"}
+ANIMAL_E = {"e120", "e441", "e542"}
+VINEGARS = r"\b(wine|sherry|malt|cider) vinegar\b"
+GLYCERIN = r"\b(glycerin[e]?|glycerol)\b"
+GF_WORD = r"gluten[- ]free"
 HARAM_E = {"e1510"}
 
 ALLERGEN = {  # Betty name -> Open Food Facts allergen tag(s)
@@ -63,22 +98,38 @@ def classify(p: dict) -> dict:
     known = bool(ingr.strip())
 
     # wine vinegar: halal for most scholars -> "doubtful" (user decides), not alcohol
-    ingr_wo_vinegar = re.sub(r"\b(wine|sherry|malt|cider) vinegar\b", "vinegar", ingr, flags=re.I)
+    ingr_wo_vinegar = re.sub(VINEGARS, "vinegar", ingr, flags=re.I)
     pork = _has(PORK, text) or "en:pork" in cats or "en:pork" in allergens
     beef = _has(BEEF, text) or "en:beef" in cats or "en:beef" in allergens
     alcohol = _has(ALCOHOL, ingr_wo_vinegar) or bool(adds & HARAM_E) or "en:contains-alcohol" in labels
-    doubtful = (_has(DOUBTFUL, ingr) or bool(adds & DOUBTFUL_E) or _has(r"\bwine vinegar\b", ingr)
-                or "en:gelatin" in allergens)
+    ingr_ok = re.sub(DOUBTFUL_OK, " ", ingr, flags=re.I)
+    doubtful_why = [label for rx, label in DOUBTFUL_WORDS if _has(rx, ingr_ok)]
+    if "en:gelatin" in allergens and "gelatin" not in doubtful_why:
+        doubtful_why.append("gelatin")
+    plain_glycerin = _has(GLYCERIN, ingr_ok) or not _has(GLYCERIN, ingr)
+    for code in sorted(adds & set(DOUBTFUL_E)):
+        name_ = DOUBTFUL_E[code]
+        if code == "e422" and not plain_glycerin:
+            continue                              # "vegetable glycerin" spelled out
+        if not any(name_.split(" (")[0] == d.split(" (")[0] for d in doubtful_why):
+            doubtful_why.append(name_)
+    doubtful = bool(doubtful_why)
+    check_why = [label for rx, label in CHECK_WORDS if _has(rx, ingr)]
+    ingr_veg = re.sub(VEG_RENNET_OK, " ", ingr, flags=re.I)
+    # animal_derived: not ok for pescatarians (fish gelatin is); any_animal: not ok for vegetarians/vegans
+    animal_derived = (_has(ANIMAL_DERIVED, re.sub(FISH_DERIVED_OK, " ", ingr_veg, flags=re.I))
+                      or bool(adds & ANIMAL_E))
+    any_animal = animal_derived or _has(ANIMAL_DERIVED, ingr_veg)
     meat = _has(MEAT, text) or any(c in cats for c in ("en:meats", "en:poultries", "en:chickens"))
     fish = _has(FISH, text) or "en:fish" in allergens or "en:fishes" in cats
     shellfish = _has(SHELLFISH, text) or bool({"en:crustaceans", "en:molluscs"} & allergens)
 
     vegan = (("en:vegan" in analysis or any("vegan" in l and "non-vegan" not in l for l in labels))
-             and "en:non-vegan" not in analysis and not meat and not fish)
+             and "en:non-vegan" not in analysis and not meat and not fish and not any_animal)
     vegetarian = vegan or (("en:vegetarian" in analysis
                             or any("vegetarian" in l and "non-" not in l for l in labels))
-                           and "en:non-vegetarian" not in analysis and not meat and not fish)
-
+                           and "en:non-vegetarian" not in analysis and not meat and not fish
+                           and not any_animal)
     halal_cert = any("halal" in l for l in labels)
     kosher_cert = any("kosher" in l or "pareve" in l or "parve" in l for l in labels)
     if halal_cert and not pork and not alcohol:
@@ -103,16 +154,17 @@ def classify(p: dict) -> dict:
 
     gf_cert = bool(labels & GLUTEN_FREE_LABELS)
     gluten_free = gf_cert or (free_of("gluten") and not _has(GLUTEN_WORDS, ingr)
-                              and (not _has(OATS, ingr) or _has(r"gluten[- ]free", ingr)))
+                              and (not _has(OATS, ingr) or _has(GF_WORD, ingr)))
     ingr_no_plant_milk = re.sub(PLANT_MILKS, "", ingr, flags=re.I)
     dairy_free = vegan or (free_of("milk") and not _has(DAIRY_WORDS, ingr_no_plant_milk))
     lactose_free = bool(labels & LACTOSE_FREE_LABELS) or dairy_free
     no_added_sugar = "en:no-added-sugar" in labels or (known and not _has(SUGARS, ingr))
     palm_free = "en:palm-oil-free" in analysis or "en:no-palm-oil" in labels
-    pescatarian = vegetarian or (known and not meat and not pork and not beef)
+    pescatarian = vegetarian or (known and not meat and not pork and not beef and not animal_derived)
 
     return dict(
-        known_ingredients=known, pork=pork, beef=beef, alcohol=alcohol, doubtful=doubtful, meat=meat,
+        known_ingredients=known, pork=pork, beef=beef, alcohol=alcohol, doubtful=doubtful, doubtful_why=doubtful_why,
+        check_why=check_why, meat=meat,
         fish=fish, shellfish=shellfish, halal=halal, halal_certified=halal_cert, kosher_certified=kosher_cert,
         vegan=vegan, vegetarian=vegetarian, pescatarian=pescatarian, gluten_free=gluten_free,
         gluten_free_certified=gf_cert, lactose_free=lactose_free, dairy_free=dairy_free,
@@ -184,11 +236,14 @@ def warnings(flags: dict) -> list:
     """Short heads-ups, shown only when they apply."""
     w = []
     if flags["halal"] == "not-halal":
-        w.append("not halal")
+        why = [x for x, on in (("pork", flags["pork"]), ("alcohol", flags["alcohol"])) if on]
+        w.append("not halal" + (f" ({', '.join(why)})" if why else ""))
     elif flags["halal"] == "doubtful":
-        w.append("halal: doubtful ingredient")
+        w.append("halal doubtful: " + ", ".join(flags["doubtful_why"]))
     elif flags["halal"] == "not-certified-meat":
         w.append("meat not halal-certified")
+    if flags["halal"] in ("ok-by-ingredients", "doubtful") and flags["check_why"]:
+        w.append("halal: check " + " & ".join(flags["check_why"]))
     if not flags["known_ingredients"]:
-        w.append("no ingredient list yet")
+        w.append("no ingredient list: additives unchecked")
     return w

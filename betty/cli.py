@@ -20,7 +20,7 @@ Common options:
   --report list.html   save a printable shopping list with photos
   --json               machine-readable output
 """
-import argparse, json, sys
+import argparse, json, re, sys
 
 from . import off
 from .categories import SHORTCUTS, resolve
@@ -175,11 +175,15 @@ def cmd_better(a):
                  "Try `betty browse <category>` instead.")
     print(f"\nLooking for something better than: {p.get('product_name')} "
           f"({base['score'] if base else '?'}/100)")
-    results, cat = [], cats[0]
-    for cat in cats[:2]:          # the product's own category, then at most one level broader
-        results = [r for r in _filter(_fetch(a, category=cat), a)
+    results, cat, tried = [], cats[0], 0
+    for cat in cats[:6]:          # its own category, then at most one level broader
+        prods = _fetch(a, category=cat)
+        if not prods:
+            continue              # nothing in this category here (yet); try the next one
+        tried += 1
+        results = [r for r in _filter(prods, a)
                    if r["code"] != p.get("code") and (not base or r["score"] > base["score"])]
-        if results:
+        if results or tried >= 2:
             break
     _show(results, a, f"Better alternatives in '{cat.split(':', 1)[-1].replace('-', ' ')}'" + _where(a))
 
@@ -193,12 +197,16 @@ GENERIC = {"en:groceries", "en:foods", "en:plant-based-foods-and-beverages", "en
            "en:desserts", "en:meals", "en:seafood", "en:fermented-foods", "en:fermented-milk-products",
            "en:farming-products", "en:dried-products-to-be-rehydrated", "en:dietary-supplements"}
 
+CATEGORY_TAG = re.compile(r"^[a-z]{2}:[a-z0-9-]+$")
+
 
 def similar_categories(p):
     """Most specific category first; never a catch-all one."""
     cats = p.get("categories_hierarchy") or p.get("categories_tags") or []
     out = []
     for c in reversed(cats):
+        if not CATEGORY_TAG.match(c):
+            continue                       # e.g. "fr:Nutella": a brand typed as a category
         if c not in GENERIC and c not in out:
             out.append(c)
     return out
