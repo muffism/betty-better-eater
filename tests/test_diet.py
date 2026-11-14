@@ -36,3 +36,12 @@ def test_wine_vinegar_is_doubtful_not_alcohol():
     f = classify(P("water, red wine vinegar, salt"))
     assert not f["alcohol"] and f["halal"] == "doubtful"
     assert classify(P("avocado, white vinegar, salt"))["halal"] == "ok-by-ingredients"
+
+
+def test_alternatives_use_specific_category_not_groceries():
+    from betty.cli import similar_categories
+    guac = {"categories_hierarchy": ["en:plant-based-foods-and-beverages", "en:plant-based-foods", "en:spreads",
+                                     "en:condiments", "en:plant-based-spreads", "en:sauces", "en:dips",
+                                     "en:guacamoles", "en:groceries"]}
+    cats = similar_categories(guac)
+    assert cats[0] == "en:guacamoles" and cats[1] == "en:dips" and "en:groceries" not in cats

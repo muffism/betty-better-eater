@@ -165,19 +165,39 @@ def cmd_better(a):
     if not p:
         sys.exit("Couldn't find that product on Open Food Facts. Try the barcode instead.")
     base = off.evaluate(p)
-    cats = p.get("categories_hierarchy") or p.get("categories_tags") or []
+    cats = similar_categories(p)
     if not cats:
-        sys.exit("That product has no category on Open Food Facts, so alternatives can't be matched.")
+        sys.exit("That product has no specific category on Open Food Facts, so alternatives can't be matched. "
+                 "Try `betty browse <category>` instead.")
     print(f"\nLooking for something better than: {p.get('product_name')} "
           f"({base['score'] if base else '?'}/100)")
-    results = []
-    for cat in reversed(cats[-3:]):          # most specific first, then broaden
-        found = [r for r in _filter(_fetch(a, category=cat), a)
-                 if r["code"] != p.get("code") and (not base or r["score"] > base["score"])]
-        results = found
-        if len(found) >= 3:
+    results, cat = [], cats[0]
+    for cat in cats[:2]:          # the product's own category, then at most one level broader
+        results = [r for r in _filter(_fetch(a, category=cat), a)
+                   if r["code"] != p.get("code") and (not base or r["score"] > base["score"])]
+        if results:
             break
-    _show(results, a, f"Better alternatives in '{cat.split(':', 1)[-1]}'" + _where(a))
+    _show(results, a, f"Better alternatives in '{cat.split(':', 1)[-1].replace('-', ' ')}'" + _where(a))
+
+
+# Catch-all categories that would compare guacamole with parsley
+GENERIC = {"en:groceries", "en:foods", "en:plant-based-foods-and-beverages", "en:plant-based-foods",
+           "en:beverages", "en:beverages-and-beverages-preparations", "en:snacks", "en:sweet-snacks",
+           "en:salty-snacks", "en:condiments", "en:sauces", "en:spreads", "en:dairies", "en:meats",
+           "en:meats-and-their-products", "en:frozen-foods", "en:canned-foods", "en:dried-products",
+           "en:cereals-and-potatoes", "en:fruits-and-vegetables-based-foods", "en:breakfasts",
+           "en:desserts", "en:meals", "en:seafood", "en:fermented-foods", "en:fermented-milk-products",
+           "en:farming-products", "en:dried-products-to-be-rehydrated", "en:dietary-supplements"}
+
+
+def similar_categories(p):
+    """Most specific category first; never a catch-all one."""
+    cats = p.get("categories_hierarchy") or p.get("categories_tags") or []
+    out = []
+    for c in reversed(cats):
+        if c not in GENERIC and c not in out:
+            out.append(c)
+    return out
 
 
 def cmd_browse(a):
