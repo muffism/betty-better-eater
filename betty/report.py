@@ -17,7 +17,7 @@ def write_html(path, results, title):
   <span class="muted">{e(r.get('brands') or '')} {e(r.get('quantity') or '')}</span><br>
   {'<span class="chip org">Organic</span>' if r['organic'] else ''}
   {''.join(f'<span class="chip">{e(b)}</span>' for b in r.get('fits', []))}
-  {''.join(f'<span class="chip warn">{e(w)}</span>' for w in r.get('warnings', []))}<br>
+  {''.join(f'<span class="chip {"note" if w.startswith("halal: check") else "warn"}">{e(w)}</span>' for w in r.get('warnings', []))}<br>
   <span class="muted">Nutrition {r['nutrition_rating']}/100 &middot; Additives {r['additive_rating']}/100
   {(' &middot; check ' + e(', '.join(x.upper() for x in r['flagged_additives']))) if r['flagged_additives'] else ''}</span><br>
   <a href="{e(r['url'])}">Open Food Facts page</a> &middot; barcode {e(r.get('code') or '')}
@@ -35,7 +35,7 @@ h1{{font-size:22px;margin:0 0 4px}} .muted{{color:#5b6b63;font-size:12px}}
 display:flex;align-items:center;justify-content:center;color:#888}}
 .body{{flex:1;font-size:13px;line-height:1.35}} .chip{{display:inline-block;background:#eef5f0;border-radius:6px;
 padding:1px 6px;margin:2px 4px 2px 0;font-size:11px}} .chip.org{{background:#dff1e5;font-weight:600}}
-.chip.warn{{background:#fdecea;color:#a12d2d}} .guide{{margin-top:12px;padding:8px 12px;border-left:4px solid #e08a1e;
+.chip.warn{{background:#fdecea;color:#a12d2d}} .chip.note{{background:#fff7ec;border:1px solid #e08a1e}} .guide{{margin-top:12px;padding:8px 12px;border-left:4px solid #e08a1e;
 background:#fff7ec;font-size:13px}}
 .score{{flex:none;width:58px;height:58px;border-radius:10px;color:#fff;font-weight:700;font-size:22px;
 display:flex;flex-direction:column;align-items:center;justify-content:center}} .score small{{font-size:9px;font-weight:500}}
