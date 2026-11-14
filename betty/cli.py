@@ -10,7 +10,10 @@
 Common options:
   --store costco       retailer (as tagged on Open Food Facts; e.g. costco, walmart, loblaws)
   --country canada     country where it's sold
-  --diet halal,no-pork no-pork | no-beef | halal | halal-strict | vegetarian | vegan
+  --diet halal,gluten-free   any mix of: halal, halal-strict, kosher, vegan, vegetarian, pescatarian,
+                       no-pork, no-beef, no-alcohol, gluten-free, gluten-free-strict, lactose-free,
+                       dairy-free, nut-free, peanut-free, egg-free, soy-free, sesame-free, fish-free,
+                       shellfish-free, mustard-free, no-added-sugar, palm-oil-free   (betty diets)
   --min 90             your own minimum score (0-100)
   --band excellent     or a band: excellent (90+), very-good (75+), good (50+), bad (25+), very-bad
   --organic            organic products only
@@ -22,20 +25,21 @@ import argparse, json, sys
 from . import off
 from .categories import SHORTCUTS, resolve
 from .score import BANDS, band_floor
-from .diet import passes
+from .diet import passes, DIETS
 
-DISCLAIMER = ("Scores are independent estimates based on Yuka's published method, not official Yuka "
-              "scores. Data: Open Food Facts contributors (ODbL). Not medical or religious advice.")
+GUIDE_WARNING = ("GUIDE ONLY: Betty is a helpful guide, not a guarantee. Always read the label yourself to "
+                 "confirm ingredients, allergens and certifications. What you buy and eat is your own decision "
+                 "and at your own discretion.")
+DISCLAIMER = ("Scores are independent estimates based on Yuka's published method, not official Yuka scores. "
+              "Data: Open Food Facts contributors (ODbL), which can be incomplete or out of date. "
+              "Not medical, allergy or religious advice.\n" + GUIDE_WARNING)
 
 
 def _diet(s):
     d = {x.strip().lower() for x in (s or "").split(",") if x.strip()}
-    ok = {"no-pork", "no-beef", "halal", "halal-strict", "vegetarian", "vegan"}
-    bad = d - ok
+    bad = d - set(DIETS)
     if bad:
-        sys.exit(f"Unknown diet option(s): {', '.join(sorted(bad))}. Use: {', '.join(sorted(ok))}")
-    if "halal" in d or "halal-strict" in d:
-        d |= {"no-pork"}
+        sys.exit(f"Unknown diet option(s): {', '.join(sorted(bad))}. Run `betty diets` to see them all.")
     return d
 
 
@@ -53,23 +57,21 @@ def _threshold(a):
     return floor
 
 
-HALAL_TXT = {"certified": "halal: certified", "ok-by-ingredients": "halal: ok by ingredients",
-             "not-certified-meat": "halal: meat not certified", "doubtful": "halal: doubtful ingredient",
-             "not-halal": "NOT halal", "unknown": "halal: unknown (no ingredients)"}
-
-
 def _line(r):
-    flags = []
+    notes = []
     if r["organic"]:
-        flags.append("organic")
+        notes.append("organic")
     if r["capped"]:
-        flags.append(f"capped: {r['capped']}")
+        notes.append(f"capped: {r['capped']}")
     if r["flagged_additives"]:
-        flags.append("additives: " + ",".join(a.upper() for a in r["flagged_additives"]))
-    name = (r["name"] or "?")[:46]
-    brand = (r["brands"] or "")[:22]
-    return (f"{r['score']:>3}  {r['label']:<9}  {name:<46}  {brand:<22}  {HALAL_TXT[r['diet']['halal']]:<32}"
-            f"  {r['code']}  {'; '.join(flags)}")
+        notes.append("check additives " + ",".join(a.upper() for a in r["flagged_additives"]))
+    notes += r["warnings"]
+    name = (r["name"] or "?")[:44]
+    brand = (r["brands"] or "")[:20]
+    fits = ("Fits: " + " · ".join(r["fits"])) if r["fits"] else ""
+    extra = f"  ({'; '.join(notes)})" if notes else ""
+    return (f"{r['score']:>3}  {r['label']:<9}  {name:<44}  {brand:<20}  {r['code']}\n"
+            f"{'':16}{fits}{extra}")
 
 
 def _show(results, a, title):
@@ -137,8 +139,10 @@ def cmd_score(a):
     print(f"  Organic         : {'yes' if r['organic'] else 'no (max possible score is 90)'}")
     if r["capped"]:
         print(f"  Capped at 49    : {r['capped']}")
-    print(f"  Diet            : {HALAL_TXT[r['diet']['halal']]}; pork={r['diet']['pork']} beef={r['diet']['beef']} "
-          f"alcohol={r['diet']['alcohol']} vegan={r['diet']['vegan']}")
+    if r["fits"]:
+        print(f"  Fits            : {' · '.join(r['fits'])}")
+    if r["warnings"]:
+        print(f"  Heads-up        : {'; '.join(r['warnings'])}")
     print(f"  Open Food Facts : {r['url']}\n\n{DISCLAIMER}")
     if a.report:
         from .report import write_html
@@ -212,6 +216,15 @@ def cmd_categories(a):
         print(f"  {k:<18} -> {v}")
 
 
+def cmd_diets(a):
+    print("Diet options for --diet (combine with commas, e.g. --diet halal,gluten-free,nut-free):\n")
+    for k, (label, _, _) in DIETS.items():
+        print(f"  {k:<20} {label}")
+    print("\nFree-from filters are cautious: products without an ingredient list, or with a 'may contain'"
+          "\nwarning, are left out. For allergies and religious needs, ALWAYS check the pack yourself.\n\n"
+          + GUIDE_WARNING)
+
+
 def cmd_explain(a):
     print("""
 How Betty estimates a score (0-100), following Yuka's published method:
@@ -234,7 +247,7 @@ def main(argv=None):
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--store", help="retailer, e.g. costco, walmart, loblaws, tesco")
     common.add_argument("--country", help="country, e.g. canada, united-states, france")
-    common.add_argument("--diet", help="comma list: no-pork,no-beef,halal,halal-strict,vegetarian,vegan")
+    common.add_argument("--diet", help="comma list, e.g. halal,gluten-free,nut-free (see: betty diets)")
     common.add_argument("--min", type=int, help="your own minimum score, 0-100")
     common.add_argument("--band", help="excellent | very-good | good | bad | very-bad")
     common.add_argument("--organic", action="store_true", help="organic products only")
@@ -256,6 +269,7 @@ def main(argv=None):
     s.add_argument("category"); s.add_argument("--brand", help="limit to a brand, e.g. kirkland-signature")
     s.set_defaults(fn=cmd_browse)
     sub.add_parser("categories", help="list category shortcuts").set_defaults(fn=cmd_categories)
+    sub.add_parser("diets", help="list diet & allergy filters").set_defaults(fn=cmd_diets)
     sub.add_parser("explain", help="how the score works").set_defaults(fn=cmd_explain)
     if argv is None:
         argv = sys.argv[1:]

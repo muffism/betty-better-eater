@@ -3,9 +3,12 @@
 **Find healthier groceries at the store you actually shop at.**
 
 Betty gives any food product a 0–100 health estimate in the spirit of the Yuka app, finds better
-alternatives, and lets you browse a category at your own retailer and country, with diet filters for
-**halal, no pork, no beef, vegetarian and vegan**. It runs on your own computer, uses free open data, and
-works with or without an AI assistant.
+alternatives, and lets you browse a category at your own retailer and country, with **diet and allergy
+filters** (halal, kosher, vegan, vegetarian, gluten-free, lactose-free, nut-free and more). Every product shows
+only the diets it actually fits. It runs on your own computer, uses free open data, and works with or without an
+AI assistant.
+
+> ⚠️ **Guide only.** Betty is a helpful guide, not a guarantee. Always read the label yourself to confirm ingredients, allergens and certifications. What you buy and eat is your own decision and at your own discretion. Not medical, allergy or religious advice.
 
 > Betty is an independent hobby project. It is **not affiliated with Yuka** (or any retailer), and its
 > numbers are **estimates**, not official Yuka scores. Please scan in the Yuka app or read the label when it matters.
@@ -29,7 +32,9 @@ betty score 0096619533602               # score a barcode
 betty find "organic chickpeas" --country canada
 betty better 0055991241031 --country canada --diet halal --band very-good
 betty browse oats --country canada --store costco --min 90 --report oats.html
+betty find "granola" --country canada --diet gluten-free,nut-free,vegan
 betty categories                        # category shortcuts (oats, chicken, frozen-vegetables, ...)
+betty diets                             # every diet & allergy filter
 betty explain                           # how the score works
 ```
 
@@ -45,7 +50,7 @@ betty explain                           # how the score works
 Use `--band very-good`, or your own cut-off with `--min 85`. If you give both, the stricter one wins.
 
 ### Options that work everywhere
-`--country` · `--store` · `--diet halal,no-pork,no-beef,halal-strict,vegetarian,vegan` · `--organic` ·
+`--country` · `--store` · `--diet` (see below) · `--organic` ·
 `--min` · `--band` · `--limit` · `--pages` (scan more products) · `--report list.html` (a printable list with photos;
 print it to PDF from your browser) · `--json`
 
@@ -72,13 +77,28 @@ Things worth knowing:
 an organic lentil soup (100), organic rolled oats (100), clean non-organic foods (90), organic milk (85) and
 organic coconut water (81). It's encouraging, but five checks aren't proof. Please send corrections.
 
-## About the diet filters (please read)
-- `halal` passes products with a halal certification label, **or** non-meat products whose ingredients contain
-  nothing known to be haram or doubtful (pork, alcohol, gelatin, rennet, carmine, L-cysteine, some emulsifiers...).
-  Meat and poultry always need a certificate.
-- `halal-strict` passes only products with a halal certification label.
-- "Halal by ingredients" is **not** a certification or a religious ruling. Wine vinegar is flagged as *doubtful*
-  so you can decide. When the ingredient list is missing, Betty says "unknown" rather than guessing.
+## Diet & allergy filters
+Combine any of these with commas, e.g. `--diet halal,gluten-free,nut-free` (or pick numbers in guided mode):
+
+| Group | Options |
+|---|---|
+| Religious | `halal`, `halal-strict` (certified only), `kosher` (certified only) |
+| Lifestyle | `vegan`, `vegetarian`, `pescatarian`, `no-pork`, `no-beef`, `no-alcohol` |
+| Free-from | `gluten-free`, `gluten-free-strict` (labelled gluten-free on the pack, best for celiac), `lactose-free`, `dairy-free`, `nut-free`, `peanut-free`, `egg-free`, `soy-free`, `sesame-free`, `fish-free`, `shellfish-free`, `mustard-free` |
+| Other | `no-added-sugar`, `palm-oil-free` |
+
+Each product lists **only the diets it fits**, e.g. `Fits: Halal (ingredients) · Kosher · Vegan · Gluten-free`.
+
+How careful is it?
+- **Free-from filters are cautious.** Products with no ingredient list are left out, and "may contain" warnings count
+  as containing. Plain oats are not called gluten-free unless labelled. Crowd-sourced data can still be wrong, so
+  **with a real allergy, always read the pack.**
+- `halal` passes products with a halal certification label, **or** non-meat products whose ingredients contain nothing
+  known to be haram or doubtful (pork, alcohol, gelatin, rennet, carmine, L-cysteine, some emulsifiers...). Meat and
+  poultry always need a certificate. "Halal (ingredients)" is **not** a certification or a religious ruling. Wine
+  vinegar is flagged as *doubtful* so you can decide.
+- `kosher` needs a kosher certification label (OU, Star-K, COR, MK, Kosher Parve...). Kashrut can't be judged from an
+  ingredient list, so there's no "by ingredients" version.
 
 ## Your retailer
 Betty uses Open Food Facts' store tags, which volunteers add. Big chains (Costco, Walmart, Tesco, Carrefour, Loblaws...)
@@ -118,6 +138,7 @@ translations, and real Yuka scans that disagree with Betty (`tests/test_score.py
 **Ideas we'd love help with:** phone barcode scanning (small web app), French/Spanish/Arabic/Urdu interface, price per score,
 an optional 2023 Nutri-Score toggle, Yuka's separate water scale, and more halal certifier recognition.
 
-## Licence
+## Licence & responsibility
 Code: MIT (see `LICENSE`). Data fetched from Open Food Facts stays under ODbL / CC BY-SA. See `NOTICE.md`.
-This is not medical, nutritional or religious advice.
+
+> ⚠️ **Guide only.** Betty is a helpful guide, not a guarantee. Always read the label yourself to confirm ingredients, allergens and certifications. What you buy and eat is your own decision and at your own discretion. Not medical, allergy or religious advice.

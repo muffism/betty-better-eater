@@ -12,4 +12,7 @@
   implemented from its public specification.
 - Retailer names (e.g. Costco, Walmart) are used only to describe where products are sold. No retailer data,
   images or prices are included in this repository.
-- Nothing here is medical, nutritional or religious advice. "Halal by ingredients" is not a certification.
+- **Guide only.** Betty is a helpful guide, not a guarantee. Always read the label yourself to confirm
+  ingredients, allergens and certifications. What you buy and eat is your own decision and at your own
+  discretion. Nothing here is medical, nutritional, allergy or religious advice. "Halal (ingredients)" is not a
+  certification, and free-from results are based on crowd-sourced data that can be incomplete or wrong.

@@ -10,13 +10,13 @@ import requests
 from .nutriscore import Nutrition, points as ns_points
 from .score import estimate
 from .additives import risks
-from .diet import classify
+from .diet import classify, badges, warnings
 
 UA = {"User-Agent": "BettyBetterEater/0.1 (+https://github.com/muffism/betty-better-eater)"}
 BASE = "https://world.openfoodfacts.org"
 FIELDS = ("code,product_name,product_name_en,brands,quantity,stores,stores_tags,countries_tags,labels_tags,"
           "categories_tags,categories_hierarchy,ingredients_text,ingredients_text_en,additives_tags,"
-          "ingredients_analysis_tags,nutriments,nutriscore,nutrition_grades,image_front_url,"
+          "ingredients_analysis_tags,allergens_tags,traces_tags,nutriments,nutriscore,nutrition_grades,image_front_url,"
           "image_front_small_url,url")
 CACHE = os.path.join(os.path.expanduser("~"), ".cache", "betty", "off")
 _last = {"search": 0.0, "read": 0.0}
@@ -122,6 +122,7 @@ def evaluate(p: dict) -> dict | None:
                         added_fat="en:fats" in cats)
         source = "computed by Betty from Open Food Facts nutrients"
     est = estimate(int(pts), is_organic(p), risks(p.get("additives_tags")), beverage=beverage)
+    diet = classify(p)
     return dict(code=p.get("code"), name=p.get("product_name_en") or p.get("product_name"), brands=p.get("brands"),
                 quantity=p.get("quantity"), stores=p.get("stores"),
                 image=p.get("image_front_url") or p.get("image_front_small_url"),
@@ -129,5 +130,6 @@ def evaluate(p: dict) -> dict | None:
                 nutriscore_points=int(pts), nutrition_rating=est.nutrition_rating,
                 additive_rating=est.additive_rating, organic=est.organic,
                 capped=est.capped_reason, flagged_additives=est.flagged_additives,
-                beverage=beverage, nutrition_source=source, diet=classify(p),
+                beverage=beverage, nutrition_source=source, diet=diet, fits=badges(diet),
+                warnings=warnings(diet),
                 categories=p.get("categories_tags") or [])

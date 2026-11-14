@@ -1,5 +1,6 @@
 """Guided mode: run `betty` with no arguments and answer a few questions."""
 from .categories import SHORTCUTS
+from .diet import DIETS
 
 
 def _ask(q, default=""):
@@ -23,7 +24,9 @@ def _choose(q, options, default="1"):
 
 def run():
     print("\nHi, I'm Betty Better Eater. Let's find you healthier groceries.\n"
-          "(Scores are estimates from Yuka's published method, using Open Food Facts data.)")
+          "(Scores are estimates from Yuka's published method, using Open Food Facts data.)\n\n"
+          "Please note: Betty is a GUIDE ONLY. Always read the label yourself to confirm ingredients,\n"
+          "allergens and certifications. What you buy and eat is your own decision and at your own discretion.")
     action = _choose("What would you like to do?", [
         ("Check a product (barcode or name)", "score"),
         ("Find a better alternative to a product", "better"),
@@ -48,12 +51,17 @@ def run():
     if store:
         argv += ["--store", store.lower().replace(" ", "-")]
 
-    diet = _choose("Any diet needs?", [
-        ("No restrictions", ""), ("Halal-friendly (certified, or plant/egg/dairy with no haram ingredients)", "halal"),
-        ("Halal certified only", "halal-strict"), ("No pork", "no-pork"), ("No pork and no beef", "no-pork,no-beef"),
-        ("Vegetarian", "vegetarian"), ("Vegan", "vegan")])
-    if diet:
-        argv += ["--diet", diet]
+    keys = list(DIETS)
+    print("\nAny diet needs or allergies? Type the numbers separated by commas (e.g. 1,10,14), or press Enter for none.")
+    for i, k in enumerate(keys, 1):
+        print(f"  {i:>2}. {DIETS[k][0]}")
+    picked = []
+    for part in _ask("Your choices", "").replace(" ", "").split(","):
+        if part.isdigit() and 1 <= int(part) <= len(keys):
+            picked.append(keys[int(part) - 1])
+    if picked:
+        argv += ["--diet", ",".join(dict.fromkeys(picked))]
+        print("  Using: " + ", ".join(dict.fromkeys(picked)))
 
     if action != "score":
         bar = _choose("How picky should I be?", [

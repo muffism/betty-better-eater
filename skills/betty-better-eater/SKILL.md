@@ -1,6 +1,6 @@
 ---
 name: betty-better-eater
-description: Find healthier groceries at the user's own store. Estimates Yuka-style 0-100 food scores (60% Nutri-Score, 30% additives, 10% organic) from Open Food Facts data, finds better alternatives, browses categories by retailer and country, and filters for halal / no-pork / no-beef / vegetarian / vegan. Use when someone asks things like "what's healthy at Costco", "is this product good", "find a better cereal", "Yuka score", "halal snacks at Walmart", or wants a shopping list (HTML/PDF) with product photos.
+description: Find healthier groceries at the user's own store. Estimates Yuka-style 0-100 food scores (60% Nutri-Score, 30% additives, 10% organic) from Open Food Facts data, finds better alternatives, browses categories by retailer and country, and filters by diet and allergy (halal, kosher, vegan, vegetarian, gluten-free, lactose-free, dairy-free, nut-free, egg-free, soy-free and more). Use when someone asks things like "what's healthy at Costco", "is this product good", "find a better cereal", "Yuka score", "halal snacks at Walmart", or wants a shopping list (HTML/PDF) with product photos.
 ---
 
 # Betty Better Eater
@@ -26,9 +26,12 @@ betty explain                                                     # sanity check
 **Thresholds:** the user's own `--min N` (e.g. 90) and/or `--band excellent|very-good|good|bad|very-bad`
 (90+ / 75+ / 50+ / 25+ / below 25). Ask which they prefer if it isn't obvious. Don't assume 90.
 
-**Diet:** `--diet halal` (certified, or no haram/doubtful ingredients and not meat), `halal-strict`
-(certified label only), `no-pork`, `no-beef`, `vegetarian`, `vegan` (comma-separate). Meat always needs a
-halal certificate to pass `halal`. Wine vinegar is flagged *doubtful* so the user can decide.
+**Diet & allergies:** `--diet` takes any comma-separated mix; `betty diets` lists them all: halal, halal-strict,
+kosher (certified label only), vegan, vegetarian, pescatarian, no-pork, no-beef, no-alcohol, gluten-free,
+gluten-free-strict, lactose-free, dairy-free, nut-free, peanut-free, egg-free, soy-free, sesame-free, fish-free,
+shellfish-free, mustard-free, no-added-sugar, palm-oil-free. Each result shows only the diets it fits (`fits`), plus
+`warnings` when relevant. Free-from filters exclude products with no ingredient list or a "may contain" warning.
+Meat always needs a halal certificate to pass `halal`. Wine vinegar is flagged *doubtful* so the user decides.
 
 ## Retailer of choice
 - `--store` uses Open Food Facts' crowd-sourced store tags. Coverage varies: Costco, Walmart and Tesco are good;
@@ -52,6 +55,9 @@ halal certificate to pass `halal`. Wine vinegar is flagged *doubtful* so the use
 3. For a final shopping list, spot-check two or three items against the pack or label photo on the OFF page.
 4. If OFF lacks nutrition for an item, the user can add it at world.openfoodfacts.org in a minute, and that helps everyone.
 5. Never present halal-by-ingredients as certified. Never give medical advice.
+6. **Always include the guide warning** with results: *Betty is a guide only. Read the label yourself to confirm
+   ingredients, allergens and certifications. What you buy and eat is your own decision and at your own discretion.*
+   For allergies, tell the user plainly that crowd-sourced data can be wrong.
 
 ## Output
 Give a short table (score, band, product, brand, halal status, why), then offer the HTML report.
