@@ -1,0 +1,24 @@
+{
+  "_about": "Curated additive risk levels used before the Open Food Facts/EFSA taxonomy. Approximates Yuka's public classification; corrections welcome via pull request (please cite a source).",
+  "levels": {
+    "risk-free": [
+      "e100", "e101", "e140", "e160a", "e162", "e163", "e170", "e260", "e270", "e290", "e296",
+      "e300", "e301", "e302", "e306", "e307", "e308", "e309", "e322", "e330", "e331", "e333",
+      "e334", "e392", "e406", "e410", "e412", "e414", "e415", "e418", "e440", "e500", "e501",
+      "e504", "e509", "e511", "e516"
+    ],
+    "limited": [
+      "e202", "e325", "e326", "e327", "e401", "e460", "e461", "e464", "e472e", "e575"
+    ],
+    "moderate": [
+      "e160b", "e200", "e211", "e220", "e223", "e224", "e282", "e404", "e420", "e422", "e460ii",
+      "e472a", "e472b", "e472c", "e481", "e482", "e491", "e492", "e967"
+    ],
+    "high": [
+      "e102", "e104", "e110", "e122", "e124", "e129", "e133", "e150c", "e150d", "e171", "e249",
+      "e250", "e251", "e252", "e319", "e320", "e321", "e338", "e339", "e340", "e341", "e407",
+      "e407a", "e433", "e450", "e451", "e452", "e466", "e471", "e621", "e950", "e951", "e954",
+      "e955"
+    ]
+  }
+}
